@@ -52,7 +52,7 @@ function parseCSV(text) {
 }
 
 async function loadData() {
-  if (GOOGLE_SHEETS_CSV_URL && GOOGLE_SHEETS_CSV_URL !== "YOUR_GOOGLE_SHEETS_CSV_URL") {
+  if (GOOGLE_SHEETS_CSV_URL && GOOGLE_SHEETS_CSV_URL !== "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5LaHf7RXli_QYvfntxsUAj-4xrABJW7PPXnONIPne5lUU5wha95u2R1aZJppbGda5SVq2CeZ0lpyv/pub?gid=973410360&single=true&output=csv") {
     try {
       const res = await fetch(GOOGLE_SHEETS_CSV_URL);
       const text = await res.text();
