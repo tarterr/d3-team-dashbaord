@@ -169,17 +169,31 @@ function si(s) {
   return SM[s] || {c:"#94A3B8",g:"unknown"};
 }
 
-// Column display config
+// Column display config — ปรับให้พอดีจอ, actions อยู่ซ้าย
 const COLS = [
-  {key:'ปีงบประมาณ', label:'ปี', w:'60px'},
-  {key:'รหัสโครงการ', label:'รหัส', w:'120px', cls:'code-cell'},
-  {key:'ชื่อโครงการ', label:'ชื่อโครงการ', w:'250px', cls:'name-cell'},
-  {key:'หัวหน้าโครงการ', label:'หัวหน้า', w:'130px'},
-  {key:'ชื่อคู่สัญญา', label:'คู่สัญญา', w:'150px', cls:'name-cell'},
+  {key:'_actions', label:'', w:'70px', fmt:'actions'},
+  {key:'ปีงบประมาณ', label:'ปีงบ', w:'45px'},
+  {key:'รหัสโครงการ', label:'เลขที่สัญญา', w:'110px', cls:'code-cell'},
+  {key:'ชื่อโครงการ', label:'ชื่อโครงการ', w:'200px', cls:'name-cell'},
+  {key:'หัวหน้าโครงการ', label:'หัวหน้าโครงการ', w:'140px', fmt:'pi'},
+  {key:'ชื่อคู่สัญญา', label:'สังกัด', w:'120px', cls:'name-cell'},
   {key:'งบประมาณตลอดโครงการ', label:'งบทั้งหมด', w:'100px', cls:'budget-cell', fmt:'budget'},
-  {key:'สถานะโครงการ', label:'สถานะ', w:'160px', fmt:'status'},
-  {key:'นวค. รับผิดชอบ', label:'นวค.', w:'70px', cls:'owner-cell', fmt:'owner'},
+  {key:'สถานะโครงการ', label:'สถานะ', w:'140px', fmt:'status'},
+  {key:'นวค. รับผิดชอบ', label:'นวค.', w:'55px', cls:'owner-cell', fmt:'owner'},
 ];
+
+// Format number with commas
+function fmtNum(v) {
+  if (!v) return '-';
+  return Number(v).toLocaleString('th-TH');
+}
+
+// Quick status change
+async function quickStatusChange(rowIndex, newStatus) {
+  const res = await apiCall({action:'update', row:rowIndex, data:JSON.stringify({'สถานะโครงการ': newStatus})});
+  if (res.success) { showToast('อัปเดตสถานะสำเร็จ', 'success'); loadData(); }
+  else showToast(res.error || 'เกิดข้อผิดพลาด', 'error');
+}
 
 // ============================================================
 // API Functions
@@ -280,43 +294,55 @@ function renderTable() {
     <div class="stat-card"><div class="label">โครงการทั้งหมด</div><div class="value" style="color:#60A5FA">${total}</div></div>
     <div class="stat-card"><div class="label">กำลังดำเนินการ</div><div class="value" style="color:#06B6D4">${active}</div></div>
     <div class="stat-card"><div class="label">ปิดแล้ว</div><div class="value" style="color:#64748B">${closed}</div></div>
-    <div class="stat-card"><div class="label">งบประมาณรวม</div><div class="value" style="color:#FCD34D;font-size:16px">${(totalBudget/1e6).toFixed(1)}M</div></div>
+    <div class="stat-card"><div class="label">งบประมาณรวม</div><div class="value" style="color:#FCD34D;font-size:16px">${fmtNum(totalBudget)}</div></div>
   `;
   
   // Header
   document.getElementById('tableHead').innerHTML = '<tr>' + 
     COLS.map(c => {
+      if (c.fmt === 'actions') return `<th style="min-width:${c.w}"></th>`;
       const arrow = sortCol === c.key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
       return `<th onclick="toggleSort('${c.key}')" style="min-width:${c.w}">${c.label}${arrow}</th>`;
-    }).join('') +
-    '<th style="min-width:80px">จัดการ</th></tr>';
+    }).join('') + '</tr>';
   
   // Body
   document.getElementById('rowCount').textContent = `แสดง ${data.length} จาก ${allData.length} โครงการ`;
   
   if (data.length === 0) {
-    document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#64748B">ไม่พบโครงการ</td></tr>';
+    document.getElementById('tableBody').innerHTML = `<tr><td colspan="${COLS.length}" style="text-align:center;padding:40px;color:#64748B">ไม่พบโครงการ</td></tr>`;
     return;
   }
+  
+  // Build status dropdown options
+  const statusOpts = dropdowns.statuses.map(st => `<option value="${st}">${st.substring(0,25)}</option>`).join('');
   
   document.getElementById('tableBody').innerHTML = data.map((d, i) => {
     const s = si(d['สถานะโครงการ']);
     const ownerColor = TC[d['นวค. รับผิดชอบ']] || '#94A3B8';
     const budget = parseFloat(d['งบประมาณตลอดโครงการ']);
+    // รวมตำแหน่งวิชาการ + ชื่อหัวหน้า
+    const title = (d['ตำแหน่งวิชาการ'] || '').trim();
+    const piName = (d['หัวหน้าโครงการ'] || '').trim();
+    const piDisplay = title ? title + piName : piName;
+    const curStatus = d['สถานะโครงการ'] || '';
     
     return `<tr>
-      <td>${d['ปีงบประมาณ'] || '-'}</td>
-      <td class="code-cell">${d['รหัสโครงการ'] || '-'}</td>
-      <td class="name-cell" title="${d['ชื่อโครงการ'] || ''}">${d['ชื่อโครงการ'] || '-'}</td>
-      <td>${d['หัวหน้าโครงการ'] || '-'}</td>
-      <td class="name-cell" title="${d['ชื่อคู่สัญญา'] || ''}">${d['ชื่อคู่สัญญา'] || '-'}</td>
-      <td class="budget-cell">${budget ? (budget/1e6).toFixed(1)+'M' : '-'}</td>
-      <td><span class="status-badge" style="background:${s.c}20;color:${s.c};border:1px solid ${s.c}40">${d['สถานะโครงการ']?.substring(0,20) || '-'}</span></td>
-      <td class="owner-cell" style="color:${ownerColor}">${d['นวค. รับผิดชอบ'] || '-'}</td>
       <td class="actions-cell">
-        <button class="btn btn-ghost btn-sm" onclick="openEditModal(${d._rowIndex})">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="openEditModal(${d._rowIndex})" title="แก้ไข">✏️</button>
         <button class="btn btn-sm" style="background:#DC262620;color:#DC2626;border:1px solid #DC262640" onclick="confirmDelete(${d._rowIndex},'${(d['ชื่อโครงการ']||'').substring(0,30).replace(/'/g,"\\'")}')">🗑️</button>
       </td>
+      <td style="font-size:11px">${d['ปีงบประมาณ'] || '-'}</td>
+      <td class="code-cell">${d['รหัสโครงการ'] || '-'}</td>
+      <td class="name-cell" title="${d['ชื่อโครงการ'] || ''}">${d['ชื่อโครงการ'] || '-'}</td>
+      <td style="font-size:11px" title="${piDisplay}">${piDisplay || '-'}</td>
+      <td class="name-cell" title="${d['ชื่อคู่สัญญา'] || ''}">${d['ชื่อคู่สัญญา'] || '-'}</td>
+      <td class="budget-cell">${budget ? fmtNum(budget) : '-'}</td>
+      <td>
+        <select onchange="quickStatusChange(${d._rowIndex}, this.value)" style="background:${s.c}15;color:${s.c};border:1px solid ${s.c}40;padding:3px 6px;border-radius:4px;font-size:10px;font-weight:600;font-family:inherit;cursor:pointer;max-width:140px;outline:none">
+          ${dropdowns.statuses.map(st => `<option value="${st}" ${curStatus===st?'selected':''}>${st.substring(0,25)}</option>`).join('')}
+        </select>
+      </td>
+      <td class="owner-cell" style="color:${ownerColor};font-size:11px">${d['นวค. รับผิดชอบ'] || '-'}</td>
     </tr>`;
   }).join('');
 }
