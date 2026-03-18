@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>จัดการโครงการ - บพค.</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans Thai',sans-serif; background:#0F172A; color:#E2E8F0; min-height:100vh; }
+
+/* Header */
+.header { background:#1E293B; border-bottom:1px solid #334155; padding:16px 24px; position:sticky; top:0; z-index:100; }
+.header-inner { max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+.header h1 { font-size:20px; font-weight:800; background:linear-gradient(90deg,#60A5FA,#A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.header p { font-size:12px; color:#64748B; }
+.btn { padding:8px 18px; border-radius:8px; border:none; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600; transition:all .15s; }
+.btn-primary { background:#3B82F6; color:#fff; }
+.btn-primary:hover { background:#2563EB; }
+.btn-danger { background:#DC2626; color:#fff; }
+.btn-danger:hover { background:#B91C1C; }
+.btn-ghost { background:transparent; border:1.5px solid #334155; color:#94A3B8; }
+.btn-ghost:hover { border-color:#60A5FA; color:#60A5FA; }
+.btn-sm { padding:5px 12px; font-size:11px; }
+
+/* Search & Filter Bar */
+.toolbar { max-width:1200px; margin:16px auto; padding:0 24px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.search-box { flex:1; min-width:250px; padding:10px 16px; border-radius:8px; border:1.5px solid #334155; background:#1E293B; color:#E2E8F0; font-size:14px; font-family:inherit; outline:none; }
+.search-box:focus { border-color:#3B82F6; }
+.filter-select { padding:10px 14px; border-radius:8px; border:1.5px solid #334155; background:#1E293B; color:#E2E8F0; font-size:13px; font-family:inherit; outline:none; cursor:pointer; }
+
+/* Stats */
+.stats { max-width:1200px; margin:0 auto 16px; padding:0 24px; display:flex; gap:10px; flex-wrap:wrap; }
+.stat-card { background:#1E293B; border:1px solid #334155; border-radius:8px; padding:12px 18px; flex:1; min-width:120px; }
+.stat-card .label { font-size:11px; color:#64748B; margin-bottom:4px; }
+.stat-card .value { font-size:22px; font-weight:800; }
+
+/* Table */
+.table-wrap { max-width:1200px; margin:0 auto; padding:0 24px; }
+.table-container { background:#1E293B; border-radius:12px; border:1px solid #334155; overflow:hidden; }
+.table-header { padding:14px 18px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; }
+.table-header .count { font-size:13px; color:#94A3B8; }
+.table-scroll { overflow-x:auto; max-height:65vh; overflow-y:auto; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+thead { position:sticky; top:0; z-index:10; }
+th { padding:10px 12px; text-align:left; background:#0F172A; color:#64748B; font-weight:600; border-bottom:2px solid #334155; white-space:nowrap; font-size:11px; cursor:pointer; user-select:none; }
+th:hover { color:#60A5FA; }
+td { padding:9px 12px; border-bottom:1px solid #1E293B50; }
+tr:nth-child(even) { background:#16203280; }
+tr:hover { background:#1E3A5F40; }
+.code-cell { font-family:monospace; color:#60A5FA; font-size:11px; }
+.name-cell { max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.budget-cell { text-align:right; font-family:monospace; color:#FCD34D; }
+.status-badge { padding:3px 8px; border-radius:4px; font-size:10px; font-weight:600; display:inline-block; }
+.owner-cell { font-weight:600; }
+.actions-cell { display:flex; gap:4px; }
+
+/* Modal */
+.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; }
+.modal { background:#1E293B; border:1px solid #334155; border-radius:16px; width:100%; max-width:700px; max-height:90vh; overflow-y:auto; }
+.modal-header { padding:20px 24px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; }
+.modal-header h2 { font-size:18px; font-weight:700; }
+.modal-body { padding:24px; }
+.modal-footer { padding:16px 24px; border-top:1px solid #334155; display:flex; justify-content:flex-end; gap:8px; }
+
+/* Form */
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.form-group { display:flex; flex-direction:column; gap:4px; }
+.form-group.full { grid-column:1/-1; }
+.form-label { font-size:12px; font-weight:600; color:#94A3B8; }
+.form-input, .form-select { padding:10px 14px; border-radius:8px; border:1.5px solid #334155; background:#0F172A; color:#E2E8F0; font-size:13px; font-family:inherit; outline:none; }
+.form-input:focus, .form-select:focus { border-color:#3B82F6; }
+
+/* Loading */
+.loading { display:flex; align-items:center; justify-content:center; padding:60px; flex-direction:column; gap:12px; color:#64748B; }
+.spinner { width:36px; height:36px; border:3px solid #334155; border-top:3px solid #3B82F6; border-radius:50%; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg) } }
+
+/* Toast */
+.toast { position:fixed; bottom:24px; right:24px; padding:14px 20px; border-radius:10px; font-size:13px; font-weight:600; z-index:300; animation:slideIn .3s ease; }
+.toast-success { background:#059669; color:#fff; }
+.toast-error { background:#DC2626; color:#fff; }
+@keyframes slideIn { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+
+/* Confirm Dialog */
+.confirm-text { font-size:14px; color:#CBD5E1; line-height:1.6; padding:8px 0; }
+.confirm-name { color:#F59E0B; font-weight:600; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <h1>📋 จัดการโครงการ</h1>
+      <p>บพค. — เพิ่ม แก้ไข ลบ โครงการวิจัย</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span id="syncStatus" style="font-size:11px;color:#64748B"></span>
+      <button class="btn btn-ghost" onclick="loadData()">🔄 รีเฟรช</button>
+      <button class="btn btn-primary" onclick="openAddModal()">+ เพิ่มโครงการ</button>
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <input class="search-box" id="searchBox" placeholder="🔍 ค้นหา ชื่อโครงการ, หัวหน้า, รหัส, คู่สัญญา..." oninput="renderTable()">
+  <select class="filter-select" id="filterOwner" onchange="renderTable()">
+    <option value="">ทุกคน</option>
+  </select>
+  <select class="filter-select" id="filterYear" onchange="renderTable()">
+    <option value="">ทุกปี</option>
+  </select>
+  <select class="filter-select" id="filterStatus" onchange="renderTable()">
+    <option value="">ทุกสถานะ</option>
+  </select>
+</div>
+
+<div class="stats" id="statsBar"></div>
+
+<div class="table-wrap">
+  <div class="table-container">
+    <div class="table-header">
+      <span class="count" id="rowCount">กำลังโหลด...</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="modalContainer"></div>
+<div id="toastContainer"></div>
+
+<script>
+// ============================================================
+// CONFIG: ใส่ URL ของ Google Apps Script Web App ตรงนี้
+// ============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbwJai7Pxc9gaN3gIDR4GSe8szzS-Jxoby97Ov0uPRSabXtnSII-Uil3uZ7fsy-TSiOA/exec';
+// ============================================================
+
+let allData = [];
+let headers = [];
+let dropdowns = { statuses: [], team: [] };
+let sortCol = null;
+let sortDir = 'asc';
+
+// Status color mapping
+const SM = {
+  "รอดำเนินการ":{c:"#06B6D4",g:"pending"},"00-รอทำสัญญา":{c:"#06B6D4",g:"pending"},
+  "03-เซ็นสัญญา":{c:"#0EA5E9",g:"pending"},"04-ดำเนินการ":{c:"#3B82F6",g:"active"},
+  "05-ขยายเวลา-งานวิจัยยังไม่เสร็จสิ้น":{c:"#A855F7",g:"active"},
+  "06-ขยายเวลา-งานวิจัยเสร็จสิ้น-ยังไม่ส่งมอบผลผลิตตามที่กำหนด":{c:"#D946EF",g:"active"},
+  "07-สิ้นสุดการวิจัย-ส่งรายงานฉบับสมบูรณ์แล้ว-รอ บพค. ดำเนินการ":{c:"#22C55E",g:"closing"},
+  "08-สิ้นสุดการวิจัย-เบิกเงินงวดสุดท้ายแล้ว-แจ้งปิดโครงการ+กรอก nriis":{c:"#4ADE80",g:"closing"},
+  "09-สิ้นสุดการวิจัย-ค้างสรุปการเงิน-รอโอนเงินคืน":{c:"#FB923C",g:"closing"},
+  "10-สิ้นสุดการวิจัย-รอ บพค.ดำเนินการปิด":{c:"#84CC16",g:"closing"},
+  "11-สิ้นสุดโครงการ":{c:"#64748B",g:"closed"},
+  "12-ยุติทุน":{c:"#DC2626",g:"terminated"},
+  "14-นักวิจัยขอยกเลิกโครงการ":{c:"#991B1B",g:"terminated"}
+};
+
+const TC = {"ต๊ะ":"#3B82F6","ต้นน้ำ":"#10B981","ฝ้าย":"#F59E0B","ไบรท์":"#EF4444","นก":"#8B5CF6"};
+
+function si(s) {
+  return SM[s] || {c:"#94A3B8",g:"unknown"};
+}
+
+// Column display config
+const COLS = [
+  {key:'ปีงบประมาณ', label:'ปี', w:'60px'},
+  {key:'รหัสโครงการ', label:'รหัส', w:'120px', cls:'code-cell'},
+  {key:'ชื่อโครงการ', label:'ชื่อโครงการ', w:'250px', cls:'name-cell'},
+  {key:'หัวหน้าโครงการ', label:'หัวหน้า', w:'130px'},
+  {key:'ชื่อคู่สัญญา', label:'คู่สัญญา', w:'150px', cls:'name-cell'},
+  {key:'งบประมาณตลอดโครงการ', label:'งบทั้งหมด', w:'100px', cls:'budget-cell', fmt:'budget'},
+  {key:'สถานะโครงการ', label:'สถานะ', w:'160px', fmt:'status'},
+  {key:'นวค. รับผิดชอบ', label:'นวค.', w:'70px', cls:'owner-cell', fmt:'owner'},
+];
+
+// ============================================================
+// API Functions
+// ============================================================
+async function apiCall(params) {
+  const url = new URL(API_URL);
+  for (let k in params) url.searchParams.set(k, params[k]);
+  const res = await fetch(url.toString());
+  return await res.json();
+}
+
+async function loadData() {
+  document.getElementById('tableBody').innerHTML = '<tr><td colspan="9"><div class="loading"><div class="spinner"></div>กำลังโหลดข้อมูล...</div></td></tr>';
+  
+  try {
+    const [dataRes, dropRes] = await Promise.all([
+      apiCall({action:'getAll'}),
+      apiCall({action:'getDropdowns'})
+    ]);
+    
+    if (dataRes.success) {
+      allData = dataRes.data;
+      headers = dataRes.headers;
+    }
+    if (dropRes.success) {
+      dropdowns = dropRes;
+    }
+    
+    populateFilters();
+    renderTable();
+    document.getElementById('syncStatus').textContent = 'อัปเดต: ' + new Date().toLocaleTimeString('th-TH');
+  } catch(e) {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="9"><div class="loading" style="color:#DC2626">❌ โหลดข้อมูลไม่สำเร็จ กรุณารีเฟรช</div></td></tr>';
+    console.error(e);
+  }
+}
+
+// ============================================================
+// Filters
+// ============================================================
+function populateFilters() {
+  const owners = [...new Set(allData.map(d => d['นวค. รับผิดชอบ']).filter(Boolean))].sort();
+  const years = [...new Set(allData.map(d => d['ปีงบประมาณ']).filter(Boolean))].sort();
+  
+  const ownerSel = document.getElementById('filterOwner');
+  ownerSel.innerHTML = '<option value="">ทุกคน</option>' + owners.map(o => `<option value="${o}">${o}</option>`).join('');
+  
+  const yearSel = document.getElementById('filterYear');
+  yearSel.innerHTML = '<option value="">ทุกปี</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+  
+  const statusGroups = {'pending':'รอดำเนินการ/เซ็นสัญญา','active':'กำลังดำเนินการ','closing':'รอปิดโครงการ','closed':'ปิดแล้ว','terminated':'ยุติ/ยกเลิก'};
+  const statusSel = document.getElementById('filterStatus');
+  statusSel.innerHTML = '<option value="">ทุกสถานะ</option>' + Object.entries(statusGroups).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
+}
+
+function getFiltered() {
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const owner = document.getElementById('filterOwner').value;
+  const year = document.getElementById('filterYear').value;
+  const status = document.getElementById('filterStatus').value;
+  
+  let data = allData.filter(d => {
+    if (owner && d['นวค. รับผิดชอบ'] !== owner) return false;
+    if (year && String(d['ปีงบประมาณ']) !== year) return false;
+    if (status && si(d['สถานะโครงการ']).g !== status) return false;
+    if (search) {
+      const haystack = [d['ชื่อโครงการ'],d['หัวหน้าโครงการ'],d['รหัสโครงการ'],d['ชื่อคู่สัญญา']].join(' ').toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+  
+  if (sortCol) {
+    data.sort((a,b) => {
+      let va = a[sortCol], vb = b[sortCol];
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (typeof va === 'number') return sortDir === 'asc' ? va-vb : vb-va;
+      return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+    });
+  }
+  return data;
+}
+
+// ============================================================
+// Render
+// ============================================================
+function renderTable() {
+  const data = getFiltered();
+  
+  // Stats
+  const total = data.length;
+  const totalBudget = data.reduce((s,d) => s + (parseFloat(d['งบประมาณตลอดโครงการ'])||0), 0);
+  const active = data.filter(d => ['active','pending'].includes(si(d['สถานะโครงการ']).g)).length;
+  const closed = data.filter(d => si(d['สถานะโครงการ']).g === 'closed').length;
+  
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-card"><div class="label">โครงการทั้งหมด</div><div class="value" style="color:#60A5FA">${total}</div></div>
+    <div class="stat-card"><div class="label">กำลังดำเนินการ</div><div class="value" style="color:#06B6D4">${active}</div></div>
+    <div class="stat-card"><div class="label">ปิดแล้ว</div><div class="value" style="color:#64748B">${closed}</div></div>
+    <div class="stat-card"><div class="label">งบประมาณรวม</div><div class="value" style="color:#FCD34D;font-size:16px">${(totalBudget/1e6).toFixed(1)}M</div></div>
+  `;
+  
+  // Header
+  document.getElementById('tableHead').innerHTML = '<tr>' + 
+    COLS.map(c => {
+      const arrow = sortCol === c.key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+      return `<th onclick="toggleSort('${c.key}')" style="min-width:${c.w}">${c.label}${arrow}</th>`;
+    }).join('') +
+    '<th style="min-width:80px">จัดการ</th></tr>';
+  
+  // Body
+  document.getElementById('rowCount').textContent = `แสดง ${data.length} จาก ${allData.length} โครงการ`;
+  
+  if (data.length === 0) {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#64748B">ไม่พบโครงการ</td></tr>';
+    return;
+  }
+  
+  document.getElementById('tableBody').innerHTML = data.map((d, i) => {
+    const s = si(d['สถานะโครงการ']);
+    const ownerColor = TC[d['นวค. รับผิดชอบ']] || '#94A3B8';
+    const budget = parseFloat(d['งบประมาณตลอดโครงการ']);
+    
+    return `<tr>
+      <td>${d['ปีงบประมาณ'] || '-'}</td>
+      <td class="code-cell">${d['รหัสโครงการ'] || '-'}</td>
+      <td class="name-cell" title="${d['ชื่อโครงการ'] || ''}">${d['ชื่อโครงการ'] || '-'}</td>
+      <td>${d['หัวหน้าโครงการ'] || '-'}</td>
+      <td class="name-cell" title="${d['ชื่อคู่สัญญา'] || ''}">${d['ชื่อคู่สัญญา'] || '-'}</td>
+      <td class="budget-cell">${budget ? (budget/1e6).toFixed(1)+'M' : '-'}</td>
+      <td><span class="status-badge" style="background:${s.c}20;color:${s.c};border:1px solid ${s.c}40">${d['สถานะโครงการ']?.substring(0,20) || '-'}</span></td>
+      <td class="owner-cell" style="color:${ownerColor}">${d['นวค. รับผิดชอบ'] || '-'}</td>
+      <td class="actions-cell">
+        <button class="btn btn-ghost btn-sm" onclick="openEditModal(${d._rowIndex})">✏️</button>
+        <button class="btn btn-sm" style="background:#DC262620;color:#DC2626;border:1px solid #DC262640" onclick="confirmDelete(${d._rowIndex},'${(d['ชื่อโครงการ']||'').substring(0,30).replace(/'/g,"\\'")}')">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleSort(col) {
+  if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortCol = col; sortDir = 'asc'; }
+  renderTable();
+}
+
+// ============================================================
+// Modal: Add / Edit
+// ============================================================
+function getFormFields() {
+  return [
+    {key:'ปีงบประมาณ', label:'ปีงบประมาณ', type:'number', half:true},
+    {key:'รหัสโครงการ', label:'รหัสโครงการ', type:'text', half:true},
+    {key:'ชื่อโครงการ', label:'ชื่อโครงการ', type:'text', full:true},
+    {key:'ตำแหน่งวิชาการ', label:'ตำแหน่งวิชาการ', type:'text', half:true},
+    {key:'หัวหน้าโครงการ', label:'หัวหน้าโครงการ', type:'text', half:true},
+    {key:'สังกัดหัวหน้าโครงการ', label:'สังกัด', type:'text', half:true},
+    {key:'ชื่อคู่สัญญา', label:'คู่สัญญา', type:'text', half:true},
+    {key:'ชื่อแผนงาน', label:'แผนงาน', type:'text', full:true},
+    {key:'แผนงานย่อย', label:'แผนงานย่อย', type:'text', full:true},
+    {key:'งบประมาณตลอดโครงการ', label:'งบทั้งหมด (บาท)', type:'number', half:true},
+    {key:'งบประมาณปีนั้น', label:'งบปีนั้น (บาท)', type:'number', half:true},
+    {key:'ระยะเวลาทำสัญญา (ปี)', label:'ระยะเวลา (ปี)', type:'number', half:true},
+    {key:'วันเริ่มต้นโครงการ', label:'วันเริ่มต้น', type:'date', half:true},
+    {key:'วันสิ้นสุดโครงการ', label:'วันสิ้นสุด', type:'date', half:true},
+    {key:'สถานะโครงการ', label:'สถานะโครงการ', type:'dropdown-status', half:true},
+    {key:'ขยายเวลาถึงวันที่', label:'ขยายเวลาถึง', type:'date', half:true},
+    {key:'นวค. รับผิดชอบ', label:'นวค. รับผิดชอบ', type:'dropdown-team', half:true},
+    {key:'หมายเหตุ', label:'หมายเหตุ', type:'text', full:true},
+  ];
+}
+
+function openAddModal() {
+  const fields = getFormFields();
+  showModal('เพิ่มโครงการใหม่', fields, {}, async (formData) => {
+    showToast('กำลังบันทึก...', 'success');
+    const res = await apiCall({action:'add', data:JSON.stringify(formData)});
+    if (res.success) { showToast(res.message, 'success'); closeModal(); loadData(); }
+    else showToast(res.error || 'เกิดข้อผิดพลาด', 'error');
+  });
+}
+
+function openEditModal(rowIndex) {
+  const row = allData.find(d => d._rowIndex === rowIndex);
+  if (!row) return;
+  
+  const fields = getFormFields();
+  showModal('แก้ไขโครงการ', fields, row, async (formData) => {
+    showToast('กำลังบันทึก...', 'success');
+    const res = await apiCall({action:'update', row:rowIndex, data:JSON.stringify(formData)});
+    if (res.success) { showToast(res.message, 'success'); closeModal(); loadData(); }
+    else showToast(res.error || 'เกิดข้อผิดพลาด', 'error');
+  });
+}
+
+function showModal(title, fields, data, onSave) {
+  const html = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>${title}</h2>
+          <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            ${fields.map(f => {
+              const cls = f.full ? 'form-group full' : 'form-group';
+              const val = data[f.key] || '';
+              let input;
+              if (f.type === 'dropdown-status') {
+                input = `<select class="form-select" id="field_${f.key}">
+                  <option value="">-- เลือก --</option>
+                  ${dropdowns.statuses.map(s => `<option value="${s}" ${val===s?'selected':''}>${s}</option>`).join('')}
+                </select>`;
+              } else if (f.type === 'dropdown-team') {
+                input = `<select class="form-select" id="field_${f.key}">
+                  <option value="">-- เลือก --</option>
+                  ${dropdowns.team.map(t => `<option value="${t}" ${val===t?'selected':''}>${t}</option>`).join('')}
+                </select>`;
+              } else {
+                input = `<input class="form-input" type="${f.type}" id="field_${f.key}" value="${val}">`;
+              }
+              return `<div class="${cls}"><label class="form-label">${f.label}</label>${input}</div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+          <button class="btn btn-primary" id="saveBtn" onclick="handleSave()">💾 บันทึก</button>
+        </div>
+      </div>
+    </div>`;
+  
+  document.getElementById('modalContainer').innerHTML = html;
+  
+  window._modalOnSave = onSave;
+  window._modalFields = fields;
+}
+
+function handleSave() {
+  const formData = {};
+  window._modalFields.forEach(f => {
+    const el = document.getElementById('field_' + f.key);
+    if (el) formData[f.key] = el.value;
+  });
+  
+  // Validate required
+  if (!formData['รหัสโครงการ']) { showToast('กรุณากรอกรหัสโครงการ', 'error'); return; }
+  if (!formData['ชื่อโครงการ']) { showToast('กรุณากรอกชื่อโครงการ', 'error'); return; }
+  
+  document.getElementById('saveBtn').textContent = '⏳ กำลังบันทึก...';
+  document.getElementById('saveBtn').disabled = true;
+  
+  window._modalOnSave(formData);
+}
+
+function closeModal() {
+  document.getElementById('modalContainer').innerHTML = '';
+}
+
+// ============================================================
+// Delete
+// ============================================================
+function confirmDelete(rowIndex, name) {
+  const html = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:450px">
+        <div class="modal-header">
+          <h2>⚠️ ยืนยันการลบ</h2>
+          <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="confirm-text">ต้องการลบโครงการนี้ใช่หรือไม่?</p>
+          <p class="confirm-name">"${name}"</p>
+          <p class="confirm-text" style="color:#DC2626;font-size:12px;margin-top:8px">⚠️ การลบไม่สามารถเรียกคืนได้</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+          <button class="btn btn-danger" onclick="doDelete(${rowIndex})">🗑️ ลบโครงการ</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modalContainer').innerHTML = html;
+}
+
+async function doDelete(rowIndex) {
+  showToast('กำลังลบ...', 'success');
+  closeModal();
+  const res = await apiCall({action:'delete', row:rowIndex});
+  if (res.success) { showToast(res.message, 'success'); loadData(); }
+  else showToast(res.error || 'เกิดข้อผิดพลาด', 'error');
+}
+
+// ============================================================
+// Toast
+// ============================================================
+function showToast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ============================================================
+// Init
+// ============================================================
+loadData();
+</script>
+</body>
+</html>
