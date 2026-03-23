@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>บพค. — ระบบบริหารโครงการ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans Thai',sans-serif;background:#0B0F1A;color:#E2E8F0;min-height:100vh;overflow-x:hidden}
+
+.bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.bg .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.15;animation:float 20s ease-in-out infinite}
+.bg .orb1{width:500px;height:500px;background:#3B82F6;top:-10%;left:-10%;animation-delay:0s}
+.bg .orb2{width:400px;height:400px;background:#8B5CF6;bottom:-5%;right:-5%;animation-delay:-7s}
+.bg .orb3{width:300px;height:300px;background:#06B6D4;top:40%;right:20%;animation-delay:-14s}
+@keyframes float{0%,100%{transform:translate(0,0)}25%{transform:translate(30px,-20px)}50%{transform:translate(-20px,30px)}75%{transform:translate(20px,20px)}}
+
+.wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:60px 24px 40px}
+
+.header{text-align:center;margin-bottom:50px}
+.logo{font-size:14px;font-weight:700;letter-spacing:4px;color:#64748B;text-transform:uppercase;margin-bottom:12px;font-family:'Space Mono',monospace}
+.title{font-size:38px;font-weight:900;line-height:1.2;margin-bottom:12px}
+.title span{background:linear-gradient(135deg,#60A5FA 0%,#34D399 50%,#A78BFA 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{font-size:15px;color:#64748B;font-weight:400;max-width:500px;margin:0 auto}
+
+.cards{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:40px}
+
+.card{position:relative;background:linear-gradient(135deg,#1E293B 0%,#0F172A 100%);border:1px solid #1E293B;border-radius:16px;padding:28px;cursor:pointer;transition:all .3s ease;overflow:hidden;text-decoration:none;color:inherit;display:block}
+.card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 20px 60px -15px var(--glow)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);opacity:0;transition:.3s}
+.card:hover::before{opacity:1}
+.card::after{content:'';position:absolute;top:0;right:0;width:200px;height:200px;background:var(--accent);opacity:.03;border-radius:50%;transform:translate(40%,-40%);transition:.3s}
+.card:hover::after{opacity:.08;transform:translate(30%,-30%)}
+
+.card-icon{width:48px;height:48px;border-radius:12px;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+.card-title{font-size:18px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card-title .arrow{font-size:16px;opacity:0;transform:translateX(-8px);transition:.3s;color:var(--accent)}
+.card:hover .card-title .arrow{opacity:1;transform:translateX(0)}
+.card-desc{font-size:13px;color:#94A3B8;line-height:1.6;margin-bottom:14px}
+.card-tags{display:flex;gap:6px;flex-wrap:wrap}
+.card-tag{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;background:var(--accent-bg);color:var(--accent);letter-spacing:.3px}
+
+.card-dashboard{--accent:#3B82F6;--accent-bg:#3B82F615;--glow:#3B82F630}
+.card-manage{--accent:#F59E0B;--accent-bg:#F59E0B15;--glow:#F59E0B30}
+.card-tracker{--accent:#10B981;--accent-bg:#10B98115;--glow:#10B98130}
+
+.footer{text-align:center;padding:20px 0;border-top:1px solid #1E293B}
+.footer p{font-size:11px;color:#334155}
+.footer a{color:#3B82F6;text-decoration:none}
+
+.status{display:flex;justify-content:center;gap:24px;margin-bottom:40px}
+.status-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748B}
+.status-dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
+.status-dot.on{background:#22C55E}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+@media(min-width:700px){
+  .cards{grid-template-columns:1fr 1fr 1fr}
+  .card{padding:24px}
+}
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<div class="wrap">
+  <div class="header">
+    <div class="logo">บพค. — PMU-B</div>
+    <h1 class="title"><span>ระบบบริหารโครงการ</span></h1>
+    <p class="subtitle">Dashboard ติดตามโครงการ จัดการข้อมูล และ Workflow Tracker ในที่เดียว</p>
+  </div>
+
+  <div class="status">
+    <div class="status-item"><div class="status-dot on"></div>ระบบทำงานปกติ</div>
+    <div class="status-item" id="projectCount"></div>
+    <div class="status-item" id="clock"></div>
+  </div>
+
+  <div class="cards">
+
+    <a class="card card-dashboard" href="./index.html">
+      <div class="card-icon">📊</div>
+      <div class="card-title">Dashboard โครงการ <span class="arrow">→</span></div>
+      <div class="card-desc">ภาพรวมโครงการทั้งหมด กราฟสถานะ งบประมาณ เปรียบเทียบรายปี รายบุคคล</div>
+      <div class="card-tags">
+        <span class="card-tag">กราฟ</span>
+        <span class="card-tag">สถานะ</span>
+        <span class="card-tag">งบประมาณ</span>
+        <span class="card-tag">Filter</span>
+      </div>
+    </a>
+
+    <a class="card card-manage" href="./manage.html">
+      <div class="card-icon">📝</div>
+      <div class="card-title">จัดการโครงการ <span class="arrow">→</span></div>
+      <div class="card-desc">เพิ่ม แก้ไข ลบ ข้อมูลโครงการ เปลี่ยนสถานะ เขียนลง Google Sheets โดยตรง</div>
+      <div class="card-tags">
+        <span class="card-tag">เพิ่ม</span>
+        <span class="card-tag">แก้ไข</span>
+        <span class="card-tag">ลบ</span>
+        <span class="card-tag">CRUD</span>
+      </div>
+    </a>
+
+    <a class="card card-tracker" href="./tracker.html">
+      <div class="card-icon">📋</div>
+      <div class="card-title">Workflow Tracker <span class="arrow">→</span></div>
+      <div class="card-desc">ติดตามกิจกรรม SOP Pipeline เตือน deadline รายงานสรุปผลงานประจำปี</div>
+      <div class="card-tags">
+        <span class="card-tag">SOP</span>
+        <span class="card-tag">Deadline</span>
+        <span class="card-tag">Pipeline</span>
+        <span class="card-tag">รายงาน</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="footer">
+    <p>Team D3 — บพค. (PMU-B) • ข้อมูลเชื่อมต่อ <a href="https://docs.google.com/spreadsheets/d/1gI_FpGfkQf7z-gBnYHjCq5VmSOmfAFSQwHys2256A-8/edit" target="_blank">Google Sheets</a></p>
+  </div>
+</div>
+
+<script>
+// Clock
+function updateClock(){
+  const now=new Date();
+  const t=now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  const d=now.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('clock').textContent=d+' '+t;
+}
+updateClock();setInterval(updateClock,30000);
+
+// Project count hint
+document.getElementById('projectCount').textContent='โครงการ 217 รายการ';
+</script>
+</body>
+</html>
