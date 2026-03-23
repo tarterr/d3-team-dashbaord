@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workflow Tracker - ต๊ะ บพค.</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans Thai',sans-serif;background:#0F172A;color:#E2E8F0;min-height:100vh}
+.hdr{background:#1E293B;border-bottom:1px solid #334155;padding:10px 20px;position:sticky;top:0;z-index:100}
+.hdr-in{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.hdr h1{font-size:17px;font-weight:800;background:linear-gradient(90deg,#60A5FA,#34D399);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav{display:flex;gap:3px}
+.nav-b{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;background:transparent;color:#94A3B8;transition:.15s}
+.nav-b.on{background:#3B82F6;color:#fff}
+.nav-b:hover:not(.on){color:#60A5FA}
+.b{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;transition:.15s}
+.bp{background:#3B82F6;color:#fff}.bp:hover{background:#2563EB}
+.bd{background:#DC2626;color:#fff}
+.bg{background:transparent;border:1.5px solid #334155;color:#94A3B8}.bg:hover{border-color:#60A5FA;color:#60A5FA}
+.bs{padding:4px 10px;font-size:10px}
+.ct{max-width:1200px;margin:0 auto;padding:14px 20px}
+.pg{display:none}.pg.on{display:block}
+.cd{background:#1E293B;border:1px solid #334155;border-radius:10px;padding:14px;margin-bottom:12px}
+.sg{display:grid;gap:8px;margin-bottom:12px}
+.sg4{grid-template-columns:repeat(4,1fr)}.sg3{grid-template-columns:repeat(3,1fr)}.sg5{grid-template-columns:repeat(5,1fr)}
+.st{background:#1E293B;border:1px solid #334155;border-radius:8px;padding:10px}
+.st .lb{font-size:10px;color:#64748B;margin-bottom:2px}
+.st .vl{font-size:20px;font-weight:800}
+.alb{background:#DC262615;border:1px solid #DC262640;border-radius:8px;padding:10px;margin-bottom:12px}
+.alb h4{font-size:11px;color:#DC2626;margin-bottom:5px}
+.ali{font-size:11px;color:#CBD5E1;padding:3px 0;border-bottom:1px solid #DC262620}
+.ali:last-child{border:none}
+.tb{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.sb{flex:1;min-width:180px;padding:7px 12px;border-radius:6px;border:1.5px solid #334155;background:#0F172A;color:#E2E8F0;font-size:11px;font-family:inherit;outline:none}
+.sb:focus{border-color:#3B82F6}
+.fs{padding:7px 10px;border-radius:6px;border:1.5px solid #334155;background:#0F172A;color:#E2E8F0;font-size:11px;font-family:inherit;outline:none;cursor:pointer}
+.tw{overflow-x:auto;max-height:55vh;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead{position:sticky;top:0;z-index:10}
+th{padding:7px 8px;text-align:left;background:#0F172A;color:#64748B;font-weight:600;border-bottom:2px solid #334155;white-space:nowrap;font-size:10px;cursor:pointer}
+td{padding:6px 8px;border-bottom:1px solid #1E293B50}
+tr:nth-child(even){background:#16203280}
+tr:hover{background:#1E3A5F40}
+.bdg{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600;white-space:nowrap}
+.pl{color:#60A5FA;font-size:10px;font-family:monospace;cursor:pointer}
+.pl:hover{text-decoration:underline}
+/* Pipeline */
+.pipe{display:flex;flex-direction:column;gap:0}
+.stp{display:flex;align-items:center;gap:10px;padding:8px 12px;transition:.15s}
+.stp-done{background:#05966910}
+.stp-cur{background:#F59E0B15;border:1.5px solid #F59E0B40;border-radius:4px}
+.stp-skip{opacity:.4}
+.stp-wait{}
+.dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
+.dot-done{background:#059669;color:#fff}
+.dot-cur{background:#F59E0B;color:#fff}
+.dot-skip{background:transparent;border:1.5px dashed #64748B;color:#64748B}
+.dot-wait{background:transparent;border:1.5px solid #334155;color:#64748B}
+.stp-info{flex:1;min-width:0}
+.stp-name{font-size:12px;font-weight:500}
+.stp-meta{font-size:10px;color:#64748B;margin-top:1px}
+.stp-dl{color:#F59E0B}.stp-over{color:#DC2626;font-weight:700}
+.prog{display:flex;align-items:center;gap:6px}
+.prog-bar{flex:1;height:6px;background:#334155;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px}
+.prog-txt{font-size:10px;color:#94A3B8;min-width:28px;text-align:right}
+/* Modal */
+.mo{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:14px}
+.md{background:#1E293B;border:1px solid #334155;border-radius:14px;width:100%;max-width:650px;max-height:90vh;overflow-y:auto}
+.md-h{padding:14px 18px;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center}
+.md-h h2{font-size:15px;font-weight:700}
+.md-b{padding:18px}
+.md-f{padding:10px 18px;border-top:1px solid #334155;display:flex;justify-content:flex-end;gap:6px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgi{display:flex;flex-direction:column;gap:3px}
+.fgi.fl{grid-column:1/-1}
+.fgl{font-size:10px;font-weight:600;color:#94A3B8}
+.fi,.fsl,.fta{padding:7px 10px;border-radius:6px;border:1.5px solid #334155;background:#0F172A;color:#E2E8F0;font-size:11px;font-family:inherit;outline:none}
+.fi:focus,.fsl:focus,.fta:focus{border-color:#3B82F6}
+.fta{min-height:50px;resize:vertical}
+.sop-chk{display:flex;flex-direction:column;gap:3px;margin-top:8px}
+.sop-chk label{display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 0;cursor:pointer}
+.sop-chk input{accent-color:#3B82F6}
+.ld{display:flex;align-items:center;justify-content:center;padding:30px;flex-direction:column;gap:8px;color:#64748B;font-size:12px}
+.sp{width:28px;height:28px;border:3px solid #334155;border-top:3px solid #3B82F6;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:18px;right:18px;padding:10px 16px;border-radius:8px;font-size:11px;font-weight:600;z-index:300;animation:si .3s}
+.t-ok{background:#059669;color:#fff}.t-err{background:#DC2626;color:#fff}
+@keyframes si{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.back-btn{font-size:11px;color:#60A5FA;cursor:pointer;margin-bottom:10px;display:inline-block}
+.back-btn:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-in">
+  <div><h1>📋 Workflow Tracker</h1><span style="font-size:10px;color:#64748B">ต๊ะ — บพค.</span></div>
+  <div class="nav">
+    <button class="nav-b on" data-p="dash">Dashboard</button>
+    <button class="nav-b" data-p="list">กิจกรรม</button>
+    <button class="nav-b" data-p="report">รายงาน</button>
+  </div>
+  <div style="display:flex;gap:4px;align-items:center">
+    <span id="sync" style="font-size:9px;color:#64748B"></span>
+    <button class="b bg bs" onclick="load()">🔄</button>
+    <button class="b bp bs" onclick="openAdd()">+ สร้างกิจกรรม</button>
+  </div>
+</div></div>
+
+<div class="ct">
+  <div id="pg-dash" class="pg on"></div>
+  <div id="pg-list" class="pg"></div>
+  <div id="pg-detail" class="pg"></div>
+  <div id="pg-report" class="pg"></div>
+</div>
+<div id="modal"></div>
+<div id="toasts"></div>
+
+<script>
+const API='https://script.google.com/macros/s/AKfycbzaO2Vo0g6tiVmpBysTo6Ai7tNG7nXr5ZzzaOzErBZ6np1xteKZZZeFu8tkz7B_Tv5w/exec';
+let D=[],P=[],T={},TK=[];
+const SC={'เสร็จ':'#059669','รอ':'#64748B','ข้าม':'#475569'};
+const TC={'การทำสัญญา':'#3B82F6','เบิกจ่ายเงินงวด':'#F59E0B','ส่งผู้ทรงประเมินรายงาน':'#8B5CF6','เบิกเงินงวดสุดท้าย':'#EC4899','แจ้งคืนเงินคงเหลือ':'#06B6D4','อนุมัติปิดโครงการ':'#64748B','จัดทำหนังสือรับรอง':'#10B981','ขออนุมัติขยายเวลา':'#EF4444','ขออนุมัติเปลี่ยนงบ':'#D946EF','งานอื่นๆ':'#94A3B8'};
+function tc(t){return TC[t]||'#94A3B8'}
+
+// Nav
+document.querySelectorAll('.nav-b').forEach(b=>b.onclick=function(){
+  document.querySelectorAll('.nav-b').forEach(x=>x.classList.remove('on'));
+  this.classList.add('on');
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+  document.getElementById('pg-'+this.dataset.p).classList.add('on');
+});
+
+function showPage(p){
+  document.querySelectorAll('.nav-b').forEach(x=>{x.classList.remove('on');if(x.dataset.p===p)x.classList.add('on')});
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+  document.getElementById('pg-'+p).classList.add('on');
+}
+
+// API
+async function api(p){const u=new URL(API);for(let k in p)u.searchParams.set(k,p[k]);const r=await fetch(u);return r.json();}
+
+async function load(){
+  try{
+    const[a,p,t]=await Promise.all([api({action:'getAll'}),api({action:'getProjects'}),api({action:'getTemplates'})]);
+    if(a.success)D=a.data;
+    if(p.success)P=p.data;
+    if(t.success){T=t.templates;TK=t.types;}
+    renderDash();renderList();renderReport();
+    document.getElementById('sync').textContent=new Date().toLocaleTimeString('th-TH');
+  }catch(e){console.error(e);toast('โหลดข้อมูลไม่สำเร็จ','err');}
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDash(){
+  const now=new Date();
+  let total=D.length,active=0,done=0,nearDL=0,worDL=0;
+  const alerts=[];
+  const nextActions=[];
+
+  D.forEach(a=>{
+    const steps=a.steps||[];
+    const doneSteps=steps.filter(s=>s['สถานะ']==='เสร็จ').length;
+    const totalSteps=steps.length;
+    const allDone=totalSteps>0&&doneSteps===totalSteps;
+    if(allDone)done++;else active++;
+
+    // Find current step (first non-done, non-skip)
+    const cur=steps.find(s=>s['สถานะ']==='รอ');
+    if(cur&&!allDone){
+      nextActions.push({act:a,step:cur,doneSteps,totalSteps});
+    }
+
+    // Check deadline - activity level
+    if(a.deadline&&!allDone){
+      const dl=new Date(a.deadline);
+      const diff=Math.ceil((dl-now)/(864e5));
+      if(diff<0){worDL++;alerts.push({a,step:cur,diff,over:true});}
+      else if(diff<=7){nearDL++;alerts.push({a,step:cur,diff,over:false});}
+    }
+    // Check step-level deadlines
+    if(cur&&cur.deadline&&!allDone){
+      const dl2=new Date(cur.deadline);
+      const diff2=Math.ceil((dl2-now)/(864e5));
+      if(diff2<0&&!alerts.find(x=>x.a.id===a.id)){alerts.push({a,step:cur,diff:diff2,over:true,stepLevel:true});worDL++;}
+      else if(diff2<=7&&diff2>=0&&!alerts.find(x=>x.a.id===a.id)){alerts.push({a,step:cur,diff:diff2,over:false,stepLevel:true});nearDL++;}
+    }
+  });
+
+  alerts.sort((a,b)=>a.diff-b.diff);
+
+  let h=`<div class="sg sg4">
+    <div class="st"><div class="lb">กิจกรรมทั้งหมด</div><div class="vl" style="color:#60A5FA">${total}</div></div>
+    <div class="st"><div class="lb">กำลังดำเนินการ</div><div class="vl" style="color:#F59E0B">${active}</div></div>
+    <div class="st"><div class="lb">ใกล้ครบ/เลยกำหนด</div><div class="vl" style="color:#DC2626">${nearDL+worDL}</div></div>
+    <div class="st"><div class="lb">เสร็จสิ้น</div><div class="vl" style="color:#22C55E">${done}</div></div>
+  </div>`;
+
+  // Alerts
+  if(alerts.length){
+    h+=`<div class="alb"><h4>⚠️ แจ้งเตือน deadline (${alerts.length} รายการ)</h4>`;
+    alerts.forEach(x=>{
+      const label=x.over?`<span style="color:#DC2626;font-weight:700">เลยกำหนด ${Math.abs(x.diff)} วัน</span>`:`<span style="color:#F59E0B;font-weight:600">เหลือ ${x.diff} วัน</span>`;
+      h+=`<div class="ali"><span class="pl" onclick="openDetail('${x.a.id}')">${x.a['รหัสโครงการ']||'งานอื่นๆ'}</span> ${x.a['ชื่อกิจกรรม']||''} → <b>${x.step?x.step['ชื่อขั้นตอน']:'—'}</b> ${label}</div>`;
+    });
+    h+=`</div>`;
+  }else{
+    h+=`<div class="cd" style="text-align:center;color:#22C55E;font-size:11px;padding:10px">✅ ไม่มีงานใกล้ครบกำหนด</div>`;
+  }
+
+  // Next actions
+  if(nextActions.length){
+    h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#CBD5E1;margin-bottom:8px">ขั้นตอนถัดไปที่ต้องทำ (${nextActions.length} กิจกรรม)</h3><div class="tw"><table><thead><tr><th>โครงการ</th><th>กิจกรรม</th><th>ขั้นตอนถัดไป</th><th style="min-width:100px">progress</th><th></th></tr></thead><tbody>`;
+    nextActions.forEach(({act:a,step:s,doneSteps:ds,totalSteps:ts})=>{
+      const pct=ts?Math.round(ds/ts*100):0;
+      const col=pct>=75?'#22C55E':pct>=50?'#3B82F6':'#F59E0B';
+      h+=`<tr>
+        <td><span class="pl" onclick="openDetail('${a.id}')">${a['รหัสโครงการ']||'งานอื่นๆ'}</span></td>
+        <td style="font-size:11px">${a['ชื่อกิจกรรม']||a['ประเภทกิจกรรม']||''}</td>
+        <td><span class="bdg" style="background:#F59E0B20;color:#F59E0B">${s['ชื่อขั้นตอน']}</span></td>
+        <td><div class="prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span class="prog-txt">${ds}/${ts}</span></div></td>
+        <td><button class="b bg bs" onclick="openDetail('${a.id}')">ดู</button></td>
+      </tr>`;
+    });
+    h+=`</tbody></table></div></div>`;
+  }
+
+  document.getElementById('pg-dash').innerHTML=h;
+}
+
+// ============================================================
+// ACTIVITY LIST
+// ============================================================
+function renderList(){
+  let h=`<div class="tb">
+    <input class="sb" id="lsearch" placeholder="🔍 ค้นหา..." oninput="renderList()">
+    <select class="fs" id="lproj" onchange="renderList()"><option value="">ทุกโครงการ</option>${P.map(p=>`<option value="${p.code}">${p.code}</option>`).join('')}<option value="งานอื่นๆ">งานอื่นๆ</option></select>
+    <select class="fs" id="ltype" onchange="renderList()"><option value="">ทุกประเภท</option>${TK.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
+    <select class="fs" id="lstatus" onchange="renderList()"><option value="">ทุกสถานะ</option><option value="active">กำลังดำเนินการ</option><option value="done">เสร็จสิ้น</option></select>
+  </div>`;
+
+  const sq=(document.getElementById('lsearch')||{}).value||'';
+  const fp=(document.getElementById('lproj')||{}).value||'';
+  const ft=(document.getElementById('ltype')||{}).value||'';
+  const fst=(document.getElementById('lstatus')||{}).value||'';
+
+  let fd=D.filter(a=>{
+    if(fp&&a['รหัสโครงการ']!==fp)return false;
+    if(ft&&a['ประเภทกิจกรรม']!==ft)return false;
+    const steps=a.steps||[];
+    const allDone=steps.length>0&&steps.filter(s=>s['สถานะ']==='เสร็จ').length===steps.length;
+    if(fst==='done'&&!allDone)return false;
+    if(fst==='active'&&allDone)return false;
+    if(sq){const hay=[a['ชื่อกิจกรรม'],a['รหัสโครงการ'],a['ชื่อโครงการ'],a['ประเภทกิจกรรม'],a['หมายเหตุ']].join(' ').toLowerCase();if(!hay.includes(sq.toLowerCase()))return false;}
+    return true;
+  });
+
+  h+=`<div class="cd" style="padding:0"><div style="padding:8px 14px;border-bottom:1px solid #334155;font-size:11px;color:#94A3B8">แสดง ${fd.length} จาก ${D.length}</div><div class="tw"><table><thead><tr><th></th><th>โครงการ</th><th>ประเภท</th><th>กิจกรรม</th><th>progress</th><th>deadline</th><th></th></tr></thead><tbody>`;
+
+  const now=new Date();
+  fd.forEach(a=>{
+    const steps=a.steps||[];
+    const ds=steps.filter(s=>s['สถานะ']==='เสร็จ').length;
+    const ts=steps.length;
+    const allDone=ts>0&&ds===ts;
+    const pct=ts?Math.round(ds/ts*100):0;
+    const col=allDone?'#22C55E':pct>=50?'#3B82F6':'#F59E0B';
+    let dlTxt=a.deadline||'—';
+    let dlCls='';
+    if(a.deadline&&!allDone){const diff=Math.ceil((new Date(a.deadline)-now)/864e5);if(diff<0)dlCls='stp-over';else if(diff<=7)dlCls='stp-dl';}
+    h+=`<tr>
+      <td style="white-space:nowrap"><button class="b bg bs" onclick="openDetail('${a.id}')">📋</button> <button class="b bs" style="background:#DC262620;color:#DC2626;border:1px solid #DC262640" onclick="confirmDel('${a.id}','${(a['ชื่อกิจกรรม']||'').substring(0,20).replace(/'/g,"\\'")}')">🗑️</button></td>
+      <td><span class="pl" onclick="openDetail('${a.id}')">${a['รหัสโครงการ']||'งานอื่นๆ'}</span></td>
+      <td><span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span></td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a['ชื่อกิจกรรม']||''}">${a['ชื่อกิจกรรม']||'-'}</td>
+      <td style="min-width:100px"><div class="prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span class="prog-txt">${ds}/${ts}</span></div></td>
+      <td class="${dlCls}" style="font-size:10px;white-space:nowrap">${fmtD(a.deadline)}</td>
+      <td><span class="bdg" style="background:${allDone?'#05966920':'#F59E0B20'};color:${allDone?'#059669':'#F59E0B'}">${allDone?'เสร็จสิ้น':'ดำเนินการ'}</span></td>
+    </tr>`;
+  });
+  h+=`</tbody></table></div></div>`;
+  document.getElementById('pg-list').innerHTML=h;
+}
+
+// ============================================================
+// DETAIL VIEW — SOP Pipeline
+// ============================================================
+function openDetail(id){
+  const a=D.find(x=>x.id===id);
+  if(!a)return;
+  showPage('detail');
+  renderDetail(a);
+}
+
+function renderDetail(a){
+  const steps=a.steps||[];
+  const ds=steps.filter(s=>s['สถานะ']==='เสร็จ').length;
+  const ts=steps.length;
+  const pct=ts?Math.round(ds/ts*100):0;
+  const allDone=ts>0&&ds===ts;
+  const now=new Date();
+
+  let h=`<span class="back-btn" onclick="showPage('list')">← กลับรายการ</span>`;
+
+  // Header card
+  h+=`<div class="cd" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+      <div>
+        <span class="pl" style="font-size:11px">${a['รหัสโครงการ']||'งานอื่นๆ'}</span>
+        <h2 style="font-size:16px;font-weight:700;margin:2px 0">${a['ชื่อกิจกรรม']||a['ประเภทกิจกรรม']||''}</h2>
+        <span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span>
+        ${a['ชื่อโครงการ']?`<p style="font-size:10px;color:#94A3B8;margin-top:4px">${a['ชื่อโครงการ']}</p>`:''}
+      </div>
+      <div style="text-align:right">
+        ${a.deadline?`<p style="font-size:10px;color:#64748B">deadline</p><p style="font-size:13px;font-weight:600;color:${allDone?'#059669':'#F59E0B'}">${fmtD(a.deadline)}</p>`:''}
+        <span class="bdg" style="margin-top:4px;background:${allDone?'#05966920':'#F59E0B20'};color:${allDone?'#059669':'#F59E0B'}">${allDone?'✅ เสร็จทั้งหมด':'กำลังดำเนินการ'}</span>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#94A3B8;margin-bottom:3px"><span>ความคืบหน้า</span><span>${ds}/${ts} (${pct}%)</span></div>
+      <div style="height:8px;background:#334155;border-radius:4px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${allDone?'#059669':'#3B82F6'};border-radius:4px;transition:.3s"></div></div>
+    </div>
+  </div>`;
+
+  // SOP Pipeline
+  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#CBD5E1;margin-bottom:10px">ขั้นตอน SOP</h3><div class="pipe">`;
+
+  let foundCurrent=false;
+  steps.forEach((s,i)=>{
+    const st=s['สถานะ']||'รอ';
+    const isDone=st==='เสร็จ';
+    const isSkip=st==='ข้าม';
+    const isCurrent=!isDone&&!isSkip&&!foundCurrent;
+    if(isCurrent)foundCurrent=true;
+
+    const cls=isDone?'stp stp-done':isCurrent?'stp stp-cur':isSkip?'stp stp-skip':'stp stp-wait';
+    const dotCls=isDone?'dot dot-done':isCurrent?'dot dot-cur':isSkip?'dot dot-skip':'dot dot-wait';
+    const dotTxt=isDone?'✓':isSkip?'—':s['ลำดับ']||i+1;
+
+    let meta='';
+    if(isDone&&s['วันที่เสร็จ'])meta=`เสร็จ ${fmtD(s['วันที่เสร็จ'])}`;
+    if(isSkip)meta='ข้ามขั้นตอนนี้';
+    if(s.deadline&&!isDone&&!isSkip){
+      const dl=new Date(s.deadline);
+      const diff=Math.ceil((dl-now)/864e5);
+      if(diff<0)meta+=` <span class="stp-over">deadline: ${fmtD(s.deadline)} (เลย ${Math.abs(diff)} วัน)</span>`;
+      else if(diff<=7)meta+=` <span class="stp-dl">deadline: ${fmtD(s.deadline)} (${diff} วัน)</span>`;
+      else meta+=`deadline: ${fmtD(s.deadline)}`;
+    }
+
+    h+=`<div class="${cls}">
+      <div class="${dotCls}">${dotTxt}</div>
+      <div class="stp-info">
+        <div class="stp-name" style="color:${isDone?'#059669':isCurrent?'#F59E0B':isSkip?'#64748B':'#94A3B8'};${isSkip?'text-decoration:line-through':''}">
+          ${s['ลำดับ']}. ${s['ชื่อขั้นตอน']}
+        </div>
+        ${meta?`<div class="stp-meta">${meta}</div>`:''}
+      </div>
+      <div style="display:flex;gap:3px">
+        ${isCurrent?`<button class="b bp bs" onclick="markStep(${s._row},'เสร็จ','${a.id}')">✓ เสร็จ</button><button class="b bg bs" onclick="markStep(${s._row},'ข้าม','${a.id}')">ข้าม</button>`:''}
+        ${isDone?`<button class="b bg bs" onclick="markStep(${s._row},'รอ','${a.id}')">↩ ย้อน</button>`:''}
+        ${isSkip?`<button class="b bg bs" onclick="markStep(${s._row},'รอ','${a.id}')">↩ คืน</button>`:''}
+      </div>
+    </div>`;
+  });
+
+  h+=`</div></div>`;
+
+  // Activity info + actions
+  h+=`<div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="b bg bs" onclick="openEditAct('${a.id}')">✏️ แก้ไขกิจกรรม</button>
+    <button class="b bs" style="background:#DC262620;color:#DC2626;border:1px solid #DC262640" onclick="confirmDel('${a.id}','${(a['ชื่อกิจกรรม']||'').substring(0,20).replace(/'/g,"\\'")}')">🗑️ ลบกิจกรรม</button>
+  </div>`;
+
+  document.getElementById('pg-detail').innerHTML=h;
+}
+
+async function markStep(stepRow, status, actId){
+  toast('กำลังบันทึก...','ok');
+  await api({action:'updateStep', data:JSON.stringify({stepRow, status})});
+  await load();
+  const a=D.find(x=>x.id===actId);
+  if(a)renderDetail(a);
+  toast('อัปเดตสำเร็จ','ok');
+}
+
+// ============================================================
+// ADD ACTIVITY
+// ============================================================
+function openAdd(){
+  const projOpts='<option value="">-- เลือก --</option><option value="งานอื่นๆ">งานอื่นๆ (ไม่ใช่โครงการ)</option>'+P.map(p=>`<option value="${p.code}">${p.code} - ${p.name.substring(0,30)}</option>`).join('');
+  const typeOpts='<option value="">-- เลือกประเภท --</option>'+TK.map(t=>`<option value="${t}">${t}</option>`).join('');
+
+  document.getElementById('modal').innerHTML=`<div class="mo" onclick="if(event.target===this)closeM()"><div class="md">
+    <div class="md-h"><h2>สร้างกิจกรรมใหม่</h2><button class="b bg bs" onclick="closeM()">✕</button></div>
+    <div class="md-b">
+      <div class="fg">
+        <div class="fgi"><label class="fgl">โครงการ</label><select class="fsl" id="fa_proj" onchange="toggleOther()">${projOpts}</select></div>
+        <div class="fgi"><label class="fgl">ประเภทกิจกรรม</label><select class="fsl" id="fa_type" onchange="loadSOP()">${typeOpts}</select></div>
+        <div class="fgi fl" id="fa_other_g" style="display:none"><label class="fgl">ระบุงาน</label><input class="fi" id="fa_other" placeholder="เช่น ประชุมทีม..."></div>
+        <div class="fgi fl"><label class="fgl">ชื่อกิจกรรม</label><input class="fi" id="fa_name" placeholder="เช่น เบิกเงินงวด 2"></div>
+        <div class="fgi"><label class="fgl">deadline กิจกรรม (ถ้ามี)</label><input class="fi" type="date" id="fa_dl"></div>
+        <div class="fgi"><label class="fgl">หมายเหตุ</label><input class="fi" id="fa_note"></div>
+      </div>
+      <div id="sop_area"></div>
+    </div>
+    <div class="md-f"><button class="b bg" onclick="closeM()">ยกเลิก</button><button class="b bp" id="fa_save" onclick="saveAdd()">💾 สร้าง</button></div>
+  </div></div>`;
+}
+
+function toggleOther(){document.getElementById('fa_other_g').style.display=document.getElementById('fa_proj').value==='งานอื่นๆ'?'flex':'none';}
+
+function loadSOP(){
+  const type=document.getElementById('fa_type').value;
+  const steps=T[type]||[];
+  if(!steps.length){document.getElementById('sop_area').innerHTML='';return;}
+  let h=`<div style="margin-top:12px"><p style="font-size:11px;color:#22C55E;margin-bottom:6px">✅ SOP "${type}" (${steps.length} ขั้นตอน) — เอาติ๊กออกเพื่อข้าม</p><div class="sop-chk">`;
+  steps.forEach((s,i)=>{h+=`<label><input type="checkbox" checked data-step="${i}" data-name="${s.name}"> ${s.order}. ${s.name}</label>`;});
+  h+=`</div></div>`;
+  document.getElementById('sop_area').innerHTML=h;
+}
+
+async function saveAdd(){
+  const projCode=document.getElementById('fa_proj').value;
+  const isOther=projCode==='งานอื่นๆ';
+  const projName=isOther?(document.getElementById('fa_other').value||'งานอื่นๆ'):(P.find(p=>p.code===projCode)||{}).name||'';
+  const type=document.getElementById('fa_type').value;
+  const name=document.getElementById('fa_name').value;
+  const dl=document.getElementById('fa_dl').value;
+  const note=document.getElementById('fa_note').value;
+  if(!name){toast('กรุณากรอกชื่อกิจกรรม','err');return;}
+
+  // Collect SOP steps
+  const checks=document.querySelectorAll('.sop-chk input[type=checkbox]');
+  const steps=[];
+  checks.forEach(c=>{steps.push({name:c.dataset.name, skip:!c.checked});});
+
+  document.getElementById('fa_save').textContent='⏳...';
+  document.getElementById('fa_save').disabled=true;
+  const res=await api({action:'addActivity',data:JSON.stringify({projectCode:isOther?'งานอื่นๆ':projCode,projectName:projName,type,name,deadline:dl,note,steps})});
+  if(res.success){toast(res.message,'ok');closeM();await load();}
+  else toast(res.error||'เกิดข้อผิดพลาด','err');
+}
+
+// ============================================================
+// EDIT ACTIVITY
+// ============================================================
+function openEditAct(id){
+  const a=D.find(x=>x.id===id);
+  if(!a)return;
+  const projOpts='<option value="">--</option><option value="งานอื่นๆ">งานอื่นๆ</option>'+P.map(p=>`<option value="${p.code}" ${a['รหัสโครงการ']===p.code?'selected':''}>${p.code}</option>`).join('');
+  const typeOpts=TK.map(t=>`<option value="${t}" ${a['ประเภทกิจกรรม']===t?'selected':''}>${t}</option>`).join('');
+
+  document.getElementById('modal').innerHTML=`<div class="mo" onclick="if(event.target===this)closeM()"><div class="md" style="max-width:500px">
+    <div class="md-h"><h2>แก้ไขกิจกรรม</h2><button class="b bg bs" onclick="closeM()">✕</button></div>
+    <div class="md-b"><div class="fg">
+      <div class="fgi"><label class="fgl">โครงการ</label><select class="fsl" id="fe_proj">${projOpts}</select></div>
+      <div class="fgi"><label class="fgl">ประเภท</label><select class="fsl" id="fe_type">${typeOpts}</select></div>
+      <div class="fgi fl"><label class="fgl">ชื่อกิจกรรม</label><input class="fi" id="fe_name" value="${a['ชื่อกิจกรรม']||''}"></div>
+      <div class="fgi"><label class="fgl">deadline</label><input class="fi" type="date" id="fe_dl" value="${a.deadline||''}"></div>
+      <div class="fgi"><label class="fgl">หมายเหตุ</label><input class="fi" id="fe_note" value="${a['หมายเหตุ']||''}"></div>
+    </div></div>
+    <div class="md-f"><button class="b bg" onclick="closeM()">ยกเลิก</button><button class="b bp" onclick="saveEdit(${a._row},'${a.id}')">💾 บันทึก</button></div>
+  </div></div>`;
+}
+
+async function saveEdit(row,id){
+  const d={'รหัสโครงการ':document.getElementById('fe_proj').value,'ประเภทกิจกรรม':document.getElementById('fe_type').value,'ชื่อกิจกรรม':document.getElementById('fe_name').value,'deadline':document.getElementById('fe_dl').value,'หมายเหตุ':document.getElementById('fe_note').value};
+  if(d['รหัสโครงการ']==='งานอื่นๆ')d['ชื่อโครงการ']='งานอื่นๆ';
+  else{const p=P.find(x=>x.code===d['รหัสโครงการ']);if(p)d['ชื่อโครงการ']=p.name;}
+  await api({action:'updateActivity',row,data:JSON.stringify(d)});
+  toast('แก้ไขสำเร็จ','ok');closeM();await load();
+  const a=D.find(x=>x.id===id);if(a)renderDetail(a);
+}
+
+// ============================================================
+// DELETE
+// ============================================================
+function confirmDel(id,name){
+  document.getElementById('modal').innerHTML=`<div class="mo" onclick="if(event.target===this)closeM()"><div class="md" style="max-width:400px">
+    <div class="md-h"><h2>⚠️ ยืนยันการลบ</h2><button class="b bg bs" onclick="closeM()">✕</button></div>
+    <div class="md-b"><p style="font-size:12px;color:#CBD5E1">ลบกิจกรรม <b style="color:#F59E0B">"${name}"</b> และขั้นตอนทั้งหมด?</p><p style="font-size:10px;color:#DC2626;margin-top:6px">⚠️ ไม่สามารถเรียกคืนได้</p></div>
+    <div class="md-f"><button class="b bg" onclick="closeM()">ยกเลิก</button><button class="b bd" onclick="doDel('${id}')">🗑️ ลบ</button></div>
+  </div></div>`;
+}
+
+async function doDel(id){closeM();await api({action:'deleteActivity',actId:id});toast('ลบสำเร็จ','ok');await load();showPage('list');}
+
+// ============================================================
+// REPORT
+// ============================================================
+function renderReport(){
+  const now=new Date();
+  const curY=now.getFullYear().toString();
+
+  let h=`<div class="tb">
+    <select class="fs" id="ry" onchange="renderReport()"></select>
+    <select class="fs" id="rm" onchange="renderReport()"><option value="">ทุกเดือน</option>
+      <option value="01">ม.ค.</option><option value="02">ก.พ.</option><option value="03">มี.ค.</option><option value="04">เม.ย.</option><option value="05">พ.ค.</option><option value="06">มิ.ย.</option>
+      <option value="07">ก.ค.</option><option value="08">ส.ค.</option><option value="09">ก.ย.</option><option value="10">ต.ค.</option><option value="11">พ.ย.</option><option value="12">ธ.ค.</option>
+    </select>
+  </div>`;
+
+  // Get filter values from existing DOM or default
+  const ry=(document.getElementById('ry')||{}).value||curY;
+  const rm=(document.getElementById('rm')||{}).value||'';
+
+  // Count completed steps as "work done"
+  let totalSteps=0, doneSteps=0;
+  const byType={}, byProj={};
+  const completedActivities=[];
+
+  D.forEach(a=>{
+    (a.steps||[]).forEach(s=>{
+      const d=s['วันที่เสร็จ']||'';
+      if(!d)return;
+      if(ry&&!d.startsWith(ry))return;
+      if(rm&&d.substring(5,7)!==rm)return;
+      totalSteps++;
+      if(s['สถานะ']==='เสร็จ'){
+        doneSteps++;
+        const t=a['ประเภทกิจกรรม']||'ไม่ระบุ';
+        byType[t]=(byType[t]||0)+1;
+        const p=a['รหัสโครงการ']||'งานอื่นๆ';
+        byProj[p]=(byProj[p]||0)+1;
+      }
+    });
+    // Check if all steps done
+    const steps=a.steps||[];
+    const allDone=steps.length>0&&steps.filter(s=>s['สถานะ']==='เสร็จ').length===steps.length;
+    if(allDone)completedActivities.push(a);
+  });
+
+  const projCount=new Set(Object.keys(byProj).filter(k=>k!=='งานอื่นๆ')).size;
+
+  h+=`<div class="sg sg3">
+    <div class="st"><div class="lb">ขั้นตอนที่เสร็จ</div><div class="vl" style="color:#22C55E">${doneSteps}</div></div>
+    <div class="st"><div class="lb">กิจกรรมที่เสร็จทั้งหมด</div><div class="vl" style="color:#60A5FA">${completedActivities.length}</div></div>
+    <div class="st"><div class="lb">โครงการที่ดูแล</div><div class="vl" style="color:#A855F7">${projCount}</div></div>
+  </div>`;
+
+  // Bars by type
+  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#CBD5E1;margin-bottom:8px">สรุปตามประเภทกิจกรรม</h3>`;
+  const sortedT=Object.entries(byType).sort((a,b)=>b[1]-a[1]);
+  const maxT=Math.max(...sortedT.map(s=>s[1]),1);
+  sortedT.forEach(([k,v])=>{h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:11px"><span style="min-width:140px;color:#94A3B8">${k}</span><div style="flex:1;height:14px;background:#334155;border-radius:4px;overflow:hidden"><div style="width:${v/maxT*100}%;height:100%;background:${tc(k)};border-radius:4px;display:flex;align-items:center;padding-left:4px;font-size:9px;color:#fff;font-weight:700">${v}</div></div><span style="min-width:24px;text-align:right;color:#CBD5E1">${v}</span></div>`;});
+  h+=`</div>`;
+
+  // Bars by project
+  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#CBD5E1;margin-bottom:8px">สรุปตามโครงการ</h3>`;
+  const sortedP=Object.entries(byProj).sort((a,b)=>b[1]-a[1]);
+  const maxP=Math.max(...sortedP.map(s=>s[1]),1);
+  sortedP.forEach(([k,v])=>{h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:11px"><span style="min-width:120px;color:#94A3B8;font-family:monospace;font-size:10px">${k}</span><div style="flex:1;height:14px;background:#334155;border-radius:4px;overflow:hidden"><div style="width:${v/maxP*100}%;height:100%;background:#3B82F6;border-radius:4px;display:flex;align-items:center;padding-left:4px;font-size:9px;color:#fff;font-weight:700">${v}</div></div><span style="min-width:24px;text-align:right;color:#CBD5E1">${v}</span></div>`;});
+  h+=`</div>`;
+
+  document.getElementById('pg-report').innerHTML=h;
+
+  // Set year selector
+  const years=[...new Set(D.flatMap(a=>(a.steps||[]).map(s=>(s['วันที่เสร็จ']||'').substring(0,4))).filter(Boolean))].sort().reverse();
+  const ysel=document.getElementById('ry');
+  if(ysel)ysel.innerHTML=years.map(y=>`<option value="${y}" ${y===ry?'selected':''}>${parseInt(y)+543}</option>`).join('')||`<option value="${curY}">${parseInt(curY)+543}</option>`;
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmtD(d){if(!d)return'—';const p=String(d).substring(0,10).split('-');if(p.length!==3)return d;return`${+p[2]}/${+p[1]}/${+p[0]+543}`;}
+function closeM(){document.getElementById('modal').innerHTML='';}
+function toast(m,t){const e=document.createElement('div');e.className='toast t-'+(t==='err'?'err':'ok');e.textContent=m;document.getElementById('toasts').appendChild(e);setTimeout(()=>e.remove(),2500);}
+
+// Init
+load();
+</script>
+</body>
+</html>
