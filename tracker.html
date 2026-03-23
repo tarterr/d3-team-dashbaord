@@ -112,17 +112,26 @@ tr:hover{background:#1E3A5F40}
   <div id="pg-dash" class="pg on"></div>
   <div id="pg-list" class="pg"></div>
   <div id="pg-detail" class="pg"></div>
+  <div id="pg-log" class="pg"></div>
   <div id="pg-report" class="pg"></div>
 </div>
 <div id="modal"></div>
 <div id="toasts"></div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbzaO2Vo0g6tiVmpBysTo6Ai7tNG7nXr5ZzzaOzErBZ6np1xteKZZZeFu8tkz7B_Tv5w/exec';
+const API='https://script.google.com/macros/s/AKfycbx3m_7JXrhbRu3Rd6rJwnaanETxUbKYZA51UGQFT-OM6jhysJ4tdSmrDjho2wf3qY6s/exec';
 let D=[],P=[],T={},TK=[];
 const SC={'เสร็จ':'#059669','รอ':'#64748B','ข้าม':'#475569'};
 const TC={'การทำสัญญา':'#3B82F6','เบิกจ่ายเงินงวด':'#F59E0B','ส่งผู้ทรงประเมินรายงาน':'#8B5CF6','เบิกเงินงวดสุดท้าย':'#EC4899','แจ้งคืนเงินคงเหลือ':'#06B6D4','อนุมัติปิดโครงการ':'#64748B','จัดทำหนังสือรับรอง':'#10B981','ขออนุมัติขยายเวลา':'#EF4444','ขออนุมัติเปลี่ยนงบ':'#D946EF','งานอื่นๆ':'#94A3B8'};
 function tc(t){return TC[t]||'#94A3B8'}
+
+// Helper: แสดงรหัส + ชื่อ PI ในวงเล็บ
+function piLabel(code){
+  if(!code||code==='งานอื่นๆ')return'งานอื่นๆ';
+  const p=P.find(x=>x.code===code);
+  if(p&&p.pi)return code+' ('+p.pi.substring(0,25)+')';
+  return code;
+}
 
 // Nav
 document.querySelectorAll('.nav-b').forEach(b=>b.onclick=function(){
@@ -204,7 +213,7 @@ function renderDash(){
     h+=`<div class="alb"><h4>⚠️ แจ้งเตือน deadline (${alerts.length} รายการ)</h4>`;
     alerts.forEach(x=>{
       const label=x.over?`<span style="color:#DC2626;font-weight:700">เลยกำหนด ${Math.abs(x.diff)} วัน</span>`:`<span style="color:#F59E0B;font-weight:600">เหลือ ${x.diff} วัน</span>`;
-      h+=`<div class="ali"><span class="pl" onclick="openDetail('${x.a.id}')">${x.a['รหัสโครงการ']||'งานอื่นๆ'}</span> ${x.a['ชื่อกิจกรรม']||''} → <b>${x.step?x.step['ชื่อขั้นตอน']:'—'}</b> ${label}</div>`;
+      h+=`<div class="ali"><span class="pl" onclick="openDetail('${x.a.id}')">${piLabel(x.a['รหัสโครงการ'])}</span> ${x.a['ชื่อกิจกรรม']||''} → <b>${x.step?x.step['ชื่อขั้นตอน']:'—'}</b> ${label}</div>`;
     });
     h+=`</div>`;
   }else{
@@ -213,16 +222,19 @@ function renderDash(){
 
   // Next actions
   if(nextActions.length){
-    h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#CBD5E1;margin-bottom:8px">ขั้นตอนถัดไปที่ต้องทำ (${nextActions.length} กิจกรรม)</h3><div class="tw"><table><thead><tr><th>โครงการ</th><th>กิจกรรม</th><th>ขั้นตอนถัดไป</th><th style="min-width:100px">progress</th><th></th></tr></thead><tbody>`;
+    h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#CBD5E1;margin-bottom:8px">ขั้นตอนถัดไปที่ต้องทำ (${nextActions.length} กิจกรรม)</h3><div class="tw"><table><thead><tr><th>โครงการ</th><th>หัวหน้า</th><th>กิจกรรม</th><th>ขั้นตอนถัดไป</th><th style="min-width:100px">progress</th><th></th></tr></thead><tbody>`;
     nextActions.forEach(({act:a,step:s,doneSteps:ds,totalSteps:ts})=>{
       const pct=ts?Math.round(ds/ts*100):0;
       const col=pct>=75?'#22C55E':pct>=50?'#3B82F6':'#F59E0B';
+      const proj=P.find(x=>x.code===a['รหัสโครงการ']);
+      const piName=proj?proj.pi:'—';
       h+=`<tr>
         <td><span class="pl" onclick="openDetail('${a.id}')">${a['รหัสโครงการ']||'งานอื่นๆ'}</span></td>
+        <td style="font-size:10px;color:#CBD5E1;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${piName}">${piName}</td>
         <td style="font-size:11px">${a['ชื่อกิจกรรม']||a['ประเภทกิจกรรม']||''}</td>
         <td><span class="bdg" style="background:#F59E0B20;color:#F59E0B">${s['ชื่อขั้นตอน']}</span></td>
         <td><div class="prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span class="prog-txt">${ds}/${ts}</span></div></td>
-        <td><button class="b bg bs" onclick="openDetail('${a.id}')">ดู</button></td>
+        <td style="white-space:nowrap"><button class="b bg bs" onclick="openDetail('${a.id}')">ดู</button> <button class="b bg bs" onclick="openProjectLog('${a['รหัสโครงการ']}')">Log</button></td>
       </tr>`;
     });
     h+=`</tbody></table></div></div>`;
@@ -273,7 +285,7 @@ function renderList(){
     if(a.deadline&&!allDone){const diff=Math.ceil((new Date(a.deadline)-now)/864e5);if(diff<0)dlCls='stp-over';else if(diff<=7)dlCls='stp-dl';}
     h+=`<tr>
       <td style="white-space:nowrap"><button class="b bg bs" onclick="openDetail('${a.id}')">📋</button> <button class="b bs" style="background:#DC262620;color:#DC2626;border:1px solid #DC262640" onclick="confirmDel('${a.id}','${(a['ชื่อกิจกรรม']||'').substring(0,20).replace(/'/g,"\\'")}')">🗑️</button></td>
-      <td><span class="pl" onclick="openDetail('${a.id}')">${a['รหัสโครงการ']||'งานอื่นๆ'}</span></td>
+      <td><span class="pl" onclick="openProjectLog('${a['รหัสโครงการ']}')">${piLabel(a['รหัสโครงการ'])}</span></td>
       <td><span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span></td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a['ชื่อกิจกรรม']||''}">${a['ชื่อกิจกรรม']||'-'}</td>
       <td style="min-width:100px"><div class="prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span class="prog-txt">${ds}/${ts}</span></div></td>
@@ -309,7 +321,7 @@ function renderDetail(a){
   h+=`<div class="cd" style="padding:16px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
       <div>
-        <span class="pl" style="font-size:11px">${a['รหัสโครงการ']||'งานอื่นๆ'}</span>
+        <span class="pl" style="font-size:11px">${piLabel(a['รหัสโครงการ'])}</span>
         <h2 style="font-size:16px;font-weight:700;margin:2px 0">${a['ชื่อกิจกรรม']||a['ประเภทกิจกรรม']||''}</h2>
         <span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span>
         ${a['ชื่อโครงการ']?`<p style="font-size:10px;color:#94A3B8;margin-top:4px">${a['ชื่อโครงการ']}</p>`:''}
@@ -371,6 +383,7 @@ function renderDetail(a){
 
   // Activity info + actions
   h+=`<div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="b bg bs" onclick="openProjectLog('${a['รหัสโครงการ']}')">📜 Log โครงการ</button>
     <button class="b bg bs" onclick="openEditAct('${a.id}')">✏️ แก้ไขกิจกรรม</button>
     <button class="b bs" style="background:#DC262620;color:#DC2626;border:1px solid #DC262640" onclick="confirmDel('${a.id}','${(a['ชื่อกิจกรรม']||'').substring(0,20).replace(/'/g,"\\'")}')">🗑️ ลบกิจกรรม</button>
   </div>`;
@@ -524,7 +537,7 @@ function renderReport(){
         doneSteps++;
         const t=a['ประเภทกิจกรรม']||'ไม่ระบุ';
         byType[t]=(byType[t]||0)+1;
-        const p=a['รหัสโครงการ']||'งานอื่นๆ';
+        const p=piLabel(a['รหัสโครงการ']);
         byProj[p]=(byProj[p]||0)+1;
       }
     });
@@ -562,6 +575,72 @@ function renderReport(){
   const years=[...new Set(D.flatMap(a=>(a.steps||[]).map(s=>(s['วันที่เสร็จ']||'').substring(0,4))).filter(Boolean))].sort().reverse();
   const ysel=document.getElementById('ry');
   if(ysel)ysel.innerHTML=years.map(y=>`<option value="${y}" ${y===ry?'selected':''}>${parseInt(y)+543}</option>`).join('')||`<option value="${curY}">${parseInt(curY)+543}</option>`;
+}
+
+// ============================================================
+// PROJECT LOG — ดูกิจกรรมทั้งหมดของโครงการนั้น
+// ============================================================
+function openProjectLog(code){
+  showPage('log');
+  const proj=P.find(x=>x.code===code);
+  const projActs=D.filter(a=>a['รหัสโครงการ']===code);
+  const piName=proj?proj.pi:'';
+  const projName=proj?proj.name:'';
+
+  let totalSteps=0, doneSteps=0;
+  projActs.forEach(a=>(a.steps||[]).forEach(s=>{totalSteps++;if(s['สถานะ']==='เสร็จ')doneSteps++;}));
+
+  let h=`<span class="back-btn" onclick="showPage('dash')">← กลับ Dashboard</span>`;
+
+  // Project header
+  h+=`<div class="cd" style="padding:16px">
+    <p style="font-size:10px;color:#64748B">ประวัติกิจกรรมโครงการ</p>
+    <h2 style="font-size:16px;font-weight:700;margin:4px 0">${code}</h2>
+    ${piName?`<p style="font-size:12px;color:#60A5FA;margin-bottom:2px">หัวหน้า: ${piName}</p>`:''}
+    ${projName?`<p style="font-size:11px;color:#94A3B8">${projName}</p>`:''}
+    <div style="display:flex;gap:12px;margin-top:10px">
+      <div style="font-size:11px"><span style="color:#64748B">กิจกรรมทั้งหมด:</span> <b style="color:#60A5FA">${projActs.length}</b></div>
+      <div style="font-size:11px"><span style="color:#64748B">ขั้นตอนเสร็จ:</span> <b style="color:#22C55E">${doneSteps}/${totalSteps}</b></div>
+    </div>
+  </div>`;
+
+  // Activity list for this project
+  if(projActs.length===0){
+    h+=`<div class="cd" style="text-align:center;color:#64748B;font-size:12px;padding:20px">ยังไม่มีกิจกรรม</div>`;
+  } else {
+    projActs.forEach(a=>{
+      const steps=a.steps||[];
+      const ds=steps.filter(s=>s['สถานะ']==='เสร็จ').length;
+      const ts=steps.length;
+      const allDone=ts>0&&ds===ts;
+      const pct=ts?Math.round(ds/ts*100):0;
+      const col=allDone?'#059669':pct>=50?'#3B82F6':'#F59E0B';
+      const cur=steps.find(s=>s['สถานะ']==='รอ');
+
+      h+=`<div class="cd" style="cursor:pointer" onclick="openDetail('${a.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+          <div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+              <span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span>
+              <span style="font-size:13px;font-weight:600">${a['ชื่อกิจกรรม']||''}</span>
+            </div>
+            ${cur&&!allDone?`<p style="font-size:10px;color:#F59E0B">ขั้นตอนถัดไป: ${cur['ชื่อขั้นตอน']}</p>`:''}
+            ${allDone?`<p style="font-size:10px;color:#059669">✅ เสร็จสิ้นทุกขั้นตอน</p>`:''}
+          </div>
+          <div style="text-align:right">
+            <div class="prog" style="min-width:100px"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span class="prog-txt">${ds}/${ts}</span></div>
+            ${a.deadline?`<p style="font-size:10px;color:#64748B;margin-top:4px">deadline: ${fmtD(a.deadline)}</p>`:''}
+          </div>
+        </div>
+        ${steps.length?`<div style="display:flex;gap:3px;margin-top:8px;flex-wrap:wrap">${steps.map(s=>{
+          const c=s['สถานะ']==='เสร็จ'?'#059669':s['สถานะ']==='ข้าม'?'#475569':'#334155';
+          return`<div style="width:${100/ts}%;max-width:40px;height:4px;background:${c};border-radius:2px" title="${s['ชื่อขั้นตอน']}: ${s['สถานะ']}"></div>`;
+        }).join('')}</div>`:''}
+      </div>`;
+    });
+  }
+
+  document.getElementById('pg-log').innerHTML=h;
 }
 
 // ============================================================
