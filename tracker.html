@@ -6,103 +6,102 @@
 <title>Workflow Tracker - ต๊ะ บพค.</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+:root{--navy:#053075;--teal:#00587E;--emerald:#14938C;--orange:#E6961A;--bg:#F2F4F7;--card:rgba(255,255,255,.65);--card-border:rgba(255,255,255,.8);--card-solid:#fff;--text:#111827;--text2:#374151;--muted:#6B7280;--muted2:#9CA3AF;--danger:#DC2626}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Noto Sans Thai',sans-serif;background:#0F172A;color:#E2E8F0;min-height:100vh}
-.hdr{background:#1E293B;border-bottom:1px solid #334155;padding:10px 20px;position:sticky;top:0;z-index:100}
+body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans Thai','SF Pro Display',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.hdr{background:rgba(5,48,117,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:10px 20px;position:sticky;top:0;z-index:100}
 .hdr-in{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.hdr h1{font-size:17px;font-weight:800;background:linear-gradient(90deg,#60A5FA,#34D399);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav{display:flex;gap:3px}
-.nav-b{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;background:transparent;color:#94A3B8;transition:.15s}
-.nav-b.on{background:#3B82F6;color:#fff}
-.nav-b:hover:not(.on){color:#60A5FA}
-.b{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;transition:.15s}
-.bp{background:#3B82F6;color:#fff}.bp:hover{background:#2563EB}
-.bd{background:#DC2626;color:#fff}
-.bg{background:transparent;border:1.5px solid #334155;color:#94A3B8}.bg:hover{border-color:#60A5FA;color:#60A5FA}
+.hdr h1{font-size:17px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.nav{display:flex;gap:2px;background:rgba(255,255,255,.12);border-radius:8px;padding:2px}
+.nav-b{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:500;background:transparent;color:rgba(255,255,255,.55);transition:.15s}
+.nav-b.on{background:rgba(255,255,255,.2);color:#fff}
+.nav-b:hover:not(.on){color:rgba(255,255,255,.8)}
+.b{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:500;transition:.15s}
+.bp{background:rgba(255,255,255,.18);color:#fff}.bp:hover{background:rgba(255,255,255,.28)}
+.bd{background:var(--danger);color:#fff}
+.bg{background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6)}.bg:hover{border-color:rgba(255,255,255,.4);color:#fff}
 .bs{padding:4px 10px;font-size:10px}
-.ct{max-width:1200px;margin:0 auto;padding:14px 20px}
+.ct{max-width:1200px;margin:0 auto;padding:16px 20px}
 .pg{display:none}.pg.on{display:block}
-.cd{background:#1E293B;border:1px solid #334155;border-radius:10px;padding:14px;margin-bottom:12px}
-.sg{display:grid;gap:8px;margin-bottom:12px}
+.cd{background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--card-border);border-radius:14px;padding:16px;margin-bottom:14px}
+.sg{display:grid;gap:10px;margin-bottom:14px}
 .sg4{grid-template-columns:repeat(4,1fr)}.sg3{grid-template-columns:repeat(3,1fr)}.sg5{grid-template-columns:repeat(5,1fr)}
-.st{background:#1E293B;border:1px solid #334155;border-radius:8px;padding:10px}
-.st .lb{font-size:10px;color:#64748B;margin-bottom:2px}
-.st .vl{font-size:20px;font-weight:800}
-.alb{background:#DC262615;border:1px solid #DC262640;border-radius:8px;padding:10px;margin-bottom:12px}
-.alb h4{font-size:11px;color:#DC2626;margin-bottom:5px}
-.ali{font-size:11px;color:#CBD5E1;padding:3px 0;border-bottom:1px solid #DC262620}
+.st{background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--card-border);border-radius:14px;padding:14px 16px}
+.st .lb{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:2px}
+.st .vl{font-size:24px;font-weight:700;letter-spacing:-.5px}
+.alb{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.alb h4{font-size:12px;color:var(--danger);font-weight:600;margin-bottom:6px}
+.ali{font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid rgba(239,68,68,.08);line-height:1.5}
 .ali:last-child{border:none}
-.tb{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-.sb{flex:1;min-width:180px;padding:7px 12px;border-radius:6px;border:1.5px solid #334155;background:#0F172A;color:#E2E8F0;font-size:11px;font-family:inherit;outline:none}
-.sb:focus{border-color:#3B82F6}
-.fs{padding:7px 10px;border-radius:6px;border:1.5px solid #334155;background:#0F172A;color:#E2E8F0;font-size:11px;font-family:inherit;outline:none;cursor:pointer}
+.tb{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.sb{flex:1;min-width:180px;padding:8px 14px;border-radius:10px;border:1px solid #E5E7EB;background:var(--card-solid);color:var(--text);font-size:12px;font-family:inherit;outline:none}
+.sb:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,88,126,.1)}
+.fs{padding:8px 12px;border-radius:10px;border:1px solid #E5E7EB;background:var(--card-solid);color:var(--text);font-size:11px;font-family:inherit;outline:none;cursor:pointer}
 .tw{overflow-x:auto;max-height:55vh;overflow-y:auto}
-table{width:100%;border-collapse:collapse;font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:12px}
 thead{position:sticky;top:0;z-index:10}
-th{padding:7px 8px;text-align:left;background:#0F172A;color:#64748B;font-weight:600;border-bottom:2px solid #334155;white-space:nowrap;font-size:10px;cursor:pointer}
-td{padding:6px 8px;border-bottom:1px solid #1E293B50}
-tr:nth-child(even){background:#16203280}
-tr:hover{background:#1E3A5F40}
-.bdg{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600;white-space:nowrap}
-.pl{color:#60A5FA;font-size:10px;font-family:monospace;cursor:pointer}
+th{padding:8px 10px;text-align:left;background:rgba(249,250,251,.95);backdrop-filter:blur(8px);color:var(--muted);font-weight:600;border-bottom:1px solid #E5E7EB;white-space:nowrap;font-size:11px;cursor:pointer}
+td{padding:7px 10px;border-bottom:1px solid #F3F4F6}
+tr:nth-child(even){background:rgba(249,250,251,.5)}
+tr:hover{background:rgba(0,88,126,.04)}
+.bdg{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;white-space:nowrap}
+.pl{color:var(--teal);font-size:11px;font-weight:500;cursor:pointer}
 .pl:hover{text-decoration:underline}
-/* Pipeline */
-.pipe{display:flex;flex-direction:column;gap:0}
-.stp{display:flex;align-items:center;gap:10px;padding:8px 12px;transition:.15s}
-.stp-done{background:#05966910}
-.stp-cur{background:#F59E0B15;border:1.5px solid #F59E0B40;border-radius:4px}
-.stp-skip{opacity:.4}
+.pipe{display:flex;flex-direction:column;gap:1px}
+.stp{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;transition:.15s}
+.stp-done{background:rgba(20,147,140,.06)}
+.stp-cur{background:rgba(230,150,26,.08);border:1.5px solid rgba(230,150,26,.25);border-radius:10px}
+.stp-skip{opacity:.35}
 .stp-wait{}
 .dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
-.dot-done{background:#059669;color:#fff}
-.dot-cur{background:#F59E0B;color:#fff}
-.dot-skip{background:transparent;border:1.5px dashed #64748B;color:#64748B}
-.dot-wait{background:transparent;border:1.5px solid #334155;color:#64748B}
+.dot-done{background:var(--emerald);color:#fff}
+.dot-cur{background:var(--orange);color:#fff}
+.dot-skip{background:transparent;border:1.5px dashed var(--muted2);color:var(--muted2)}
+.dot-wait{background:transparent;border:1.5px solid #D1D5DB;color:var(--muted2)}
 .stp-info{flex:1;min-width:0}
 .stp-name{font-size:12px;font-weight:500}
-.stp-meta{font-size:10px;color:#64748B;margin-top:1px}
-.stp-dl{color:#F59E0B}.stp-over{color:#DC2626;font-weight:700}
+.stp-meta{font-size:10px;color:var(--muted2);margin-top:1px}
+.stp-dl{color:var(--orange)}.stp-over{color:var(--danger);font-weight:600}
 .prog{display:flex;align-items:center;gap:6px}
-.prog-bar{flex:1;height:6px;background:#334155;border-radius:3px;overflow:hidden}
+.prog-bar{flex:1;height:6px;background:rgba(0,0,0,.06);border-radius:3px;overflow:hidden}
 .prog-fill{height:100%;border-radius:3px}
-.prog-txt{font-size:10px;color:#94A3B8;min-width:28px;text-align:right}
-/* Modal */
-.mo{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:14px}
-.md{background:#1E293B;border:1px solid #334155;border-radius:14px;width:100%;max-width:650px;max-height:90vh;overflow-y:auto}
-.md-h{padding:14px 18px;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center}
-.md-h h2{font-size:15px;font-weight:700}
-.md-b{padding:18px}
-.md-f{padding:10px 18px;border-top:1px solid #334155;display:flex;justify-content:flex-end;gap:6px}
-.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.fgi{display:flex;flex-direction:column;gap:3px}
+.prog-txt{font-size:10px;color:var(--muted2);min-width:28px;text-align:right}
+.mo{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:14px}
+.md{background:var(--card-solid);border:1px solid #E5E7EB;border-radius:16px;width:100%;max-width:650px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.12)}
+.md-h{padding:16px 20px;border-bottom:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center}
+.md-h h2{font-size:16px;font-weight:600;color:var(--text)}
+.md-b{padding:20px}
+.md-f{padding:12px 20px;border-top:1px solid #F3F4F6;display:flex;justify-content:flex-end;gap:6px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fgi{display:flex;flex-direction:column;gap:4px}
 .fgi.fl{grid-column:1/-1}
-.fgl{font-size:10px;font-weight:600;color:#94A3B8}
-.fi,.fsl,.fta{padding:7px 10px;border-radius:6px;border:1.5px solid #334155;background:#0F172A;color:#E2E8F0;font-size:11px;font-family:inherit;outline:none}
-.fi:focus,.fsl:focus,.fta:focus{border-color:#3B82F6}
+.fgl{font-size:11px;font-weight:500;color:var(--muted)}
+.fi,.fsl,.fta{padding:8px 12px;border-radius:10px;border:1px solid #E5E7EB;background:var(--card-solid);color:var(--text);font-size:12px;font-family:inherit;outline:none}
+.fi:focus,.fsl:focus,.fta:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,88,126,.1)}
 .fta{min-height:50px;resize:vertical}
-.sop-chk{display:flex;flex-direction:column;gap:3px;margin-top:8px}
-.sop-chk label{display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 0;cursor:pointer}
-.sop-chk input{accent-color:#3B82F6}
-.ld{display:flex;align-items:center;justify-content:center;padding:30px;flex-direction:column;gap:8px;color:#64748B;font-size:12px}
-.sp{width:28px;height:28px;border:3px solid #334155;border-top:3px solid #3B82F6;border-radius:50%;animation:spin 1s linear infinite}
+.sop-chk{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.sop-chk label{display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0;cursor:pointer;color:var(--text2)}
+.sop-chk input{accent-color:var(--emerald);width:16px;height:16px}
+.ld{display:flex;align-items:center;justify-content:center;padding:30px;flex-direction:column;gap:8px;color:var(--muted);font-size:12px}
+.sp{width:28px;height:28px;border:3px solid #E5E7EB;border-top:3px solid var(--teal);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.toast{position:fixed;bottom:18px;right:18px;padding:10px 16px;border-radius:8px;font-size:11px;font-weight:600;z-index:300;animation:si .3s}
-.t-ok{background:#059669;color:#fff}.t-err{background:#DC2626;color:#fff}
+.toast{position:fixed;bottom:18px;right:18px;padding:12px 18px;border-radius:12px;font-size:12px;font-weight:500;z-index:300;animation:si .3s;box-shadow:0 8px 30px rgba(0,0,0,.12)}
+.t-ok{background:var(--emerald);color:#fff}.t-err{background:var(--danger);color:#fff}
 @keyframes si{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
-.back-btn{font-size:11px;color:#60A5FA;cursor:pointer;margin-bottom:10px;display:inline-block}
+.back-btn{font-size:12px;color:var(--teal);cursor:pointer;margin-bottom:12px;display:inline-flex;align-items:center;gap:4px;font-weight:500}
 .back-btn:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="hdr"><div class="hdr-in">
-  <div><h1>📋 Workflow Tracker</h1><span style="font-size:10px;color:#64748B">ต๊ะ — บพค.</span></div>
+  <div><h1>📋 Workflow Tracker</h1><span style="font-size:11px;color:rgba(255,255,255,.5)">ต๊ะ — บพค.</span></div>
   <div class="nav">
     <button class="nav-b on" data-p="dash">Dashboard</button>
     <button class="nav-b" data-p="list">กิจกรรม</button>
     <button class="nav-b" data-p="report">รายงาน</button>
   </div>
   <div style="display:flex;gap:4px;align-items:center">
-    <span id="sync" style="font-size:9px;color:#64748B"></span>
+    <span id="sync" style="font-size:9px;color:rgba(255,255,255,.5)"></span>
     <button class="b bg bs" onclick="load()">🔄</button>
     <button class="b bp bs" onclick="openAdd()">+ สร้างกิจกรรม</button>
   </div>
@@ -121,8 +120,8 @@ tr:hover{background:#1E3A5F40}
 <script>
 const API='https://script.google.com/macros/s/AKfycbya3mXipl5aYu9GJyQYHzXmmcjRdcXDqWV6IwQI1jXa0OBddXDzjL13IzIcuKKNyY-p/exec';
 let D=[],P=[],T={},TK=[];
-const SC={'เสร็จ':'#059669','รอ':'#64748B','ข้าม':'#475569'};
-const TC={'การทำสัญญา':'#3B82F6','เบิกจ่ายเงินงวด':'#F59E0B','ส่งผู้ทรงประเมินรายงาน':'#8B5CF6','เบิกเงินงวดสุดท้าย':'#EC4899','แจ้งคืนเงินคงเหลือ':'#06B6D4','อนุมัติปิดโครงการ':'#64748B','จัดทำหนังสือรับรอง':'#10B981','ขออนุมัติขยายเวลา':'#EF4444','ขออนุมัติเปลี่ยนงบ':'#D946EF','งานอื่นๆ':'#94A3B8'};
+const SC={'เสร็จ':'#14938C','รอ':'#7A9BBF','ข้าม':'#475569'};
+const TC={'การทำสัญญา':'#00587E','เบิกจ่ายเงินงวด':'#E6961A','ส่งผู้ทรงประเมินรายงาน':'#8B5CF6','เบิกเงินงวดสุดท้าย':'#EC4899','แจ้งคืนเงินคงเหลือ':'#06B6D4','อนุมัติปิดโครงการ':'#64748B','จัดทำหนังสือรับรอง':'#10B981','ขออนุมัติขยายเวลา':'#EF4444','ขออนุมัติเปลี่ยนงบ':'#D946EF','งานอื่นๆ':'#94A3B8'};
 function tc(t){return TC[t]||'#94A3B8'}
 
 // Helper: แสดงรหัส + ชื่อ PI ในวงเล็บ
@@ -202,7 +201,7 @@ function renderDash(){
   alerts.sort((a,b)=>a.diff-b.diff);
 
   let h=`<div class="sg sg4">
-    <div class="st"><div class="lb">กิจกรรมทั้งหมด</div><div class="vl" style="color:#60A5FA">${total}</div></div>
+    <div class="st"><div class="lb">กิจกรรมทั้งหมด</div><div class="vl" style="color:#00587E">${total}</div></div>
     <div class="st"><div class="lb">กำลังดำเนินการ</div><div class="vl" style="color:#F59E0B">${active}</div></div>
     <div class="st"><div class="lb">ใกล้ครบ/เลยกำหนด</div><div class="vl" style="color:#DC2626">${nearDL+worDL}</div></div>
     <div class="st"><div class="lb">เสร็จสิ้น</div><div class="vl" style="color:#22C55E">${done}</div></div>
@@ -222,15 +221,15 @@ function renderDash(){
 
   // Next actions
   if(nextActions.length){
-    h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#CBD5E1;margin-bottom:8px">ขั้นตอนถัดไปที่ต้องทำ (${nextActions.length} กิจกรรม)</h3><div class="tw"><table><thead><tr><th>โครงการ</th><th>หัวหน้า</th><th>กิจกรรม</th><th>ขั้นตอนถัดไป</th><th style="min-width:100px">progress</th><th></th></tr></thead><tbody>`;
+    h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#111827;margin-bottom:8px">ขั้นตอนถัดไปที่ต้องทำ (${nextActions.length} กิจกรรม)</h3><div class="tw"><table><thead><tr><th>โครงการ</th><th>หัวหน้า</th><th>กิจกรรม</th><th>ขั้นตอนถัดไป</th><th style="min-width:100px">progress</th><th></th></tr></thead><tbody>`;
     nextActions.forEach(({act:a,step:s,doneSteps:ds,totalSteps:ts})=>{
       const pct=ts?Math.round(ds/ts*100):0;
-      const col=pct>=75?'#22C55E':pct>=50?'#3B82F6':'#F59E0B';
+      const col=pct>=75?'#14938C':pct>=50?'#00587E':'#E6961A';
       const proj=P.find(x=>x.code===a['รหัสโครงการ']);
       const piName=proj?proj.pi:'—';
       h+=`<tr>
         <td><span class="pl" onclick="openDetail('${a.id}')">${a['รหัสโครงการ']||'งานอื่นๆ'}</span></td>
-        <td style="font-size:10px;color:#CBD5E1;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${piName}">${piName}</td>
+        <td style="font-size:10px;color:#111827;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${piName}">${piName}</td>
         <td style="font-size:11px">${a['ชื่อกิจกรรม']||a['ประเภทกิจกรรม']||''}</td>
         <td><span class="bdg" style="background:#F59E0B20;color:#F59E0B">${s['ชื่อขั้นตอน']}</span></td>
         <td><div class="prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span class="prog-txt">${ds}/${ts}</span></div></td>
@@ -246,55 +245,66 @@ function renderDash(){
 // ============================================================
 // ACTIVITY LIST
 // ============================================================
-function renderList(){
-  let h=`<div class="tb">
-    <input class="sb" id="lsearch" placeholder="🔍 ค้นหา..." oninput="renderList()">
-    <select class="fs" id="lproj" onchange="renderList()"><option value="">ทุกโครงการ</option>${P.map(p=>`<option value="${p.code}">${p.code}</option>`).join('')}<option value="งานอื่นๆ">งานอื่นๆ</option></select>
-    <select class="fs" id="ltype" onchange="renderList()"><option value="">ทุกประเภท</option>${TK.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
-    <select class="fs" id="lstatus" onchange="renderList()"><option value="">ทุกสถานะ</option><option value="active">กำลังดำเนินการ</option><option value="done">เสร็จสิ้น</option></select>
-  </div>`;
+function initListToolbar(){
+  document.getElementById('pg-list').innerHTML=`
+    <div class="tb">
+      <input class="sb" id="lsearch" placeholder="🔍 ค้นหา..." oninput="renderListBody()">
+      <select class="fs" id="lproj" onchange="renderListBody()"><option value="">ทุกโครงการ</option>${P.map(p=>`<option value="${p.code}">${piLabel(p.code)}</option>`).join('')}<option value="งานอื่นๆ">งานอื่นๆ</option></select>
+      <select class="fs" id="ltype" onchange="renderListBody()"><option value="">ทุกประเภท</option>${TK.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
+      <select class="fs" id="lstatus" onchange="renderListBody()"><option value="">ทุกสถานะ</option><option value="active">กำลังดำเนินการ</option><option value="done">เสร็จสิ้น</option></select>
+    </div>
+    <div class="cd" style="padding:0">
+      <div style="padding:8px 14px;border-bottom:1px solid #F3F4F6;font-size:11px;color:#94A3B8" id="listCount"></div>
+      <div class="tw"><table><thead id="listHead"></thead><tbody id="listBody"></tbody></table></div>
+    </div>`;
+  renderListBody();
+}
 
+function renderList(){ initListToolbar(); }
+
+function renderListBody(){
   const sq=(document.getElementById('lsearch')||{}).value||'';
   const fp=(document.getElementById('lproj')||{}).value||'';
   const ft=(document.getElementById('ltype')||{}).value||'';
   const fst=(document.getElementById('lstatus')||{}).value||'';
 
   let fd=D.filter(a=>{
-    if(fp&&a['รหัสโครงการ']!==fp)return false;
+    if(fp==='งานอื่นๆ'&&a['รหัสโครงการ']!=='งานอื่นๆ')return false;
+    if(fp&&fp!=='งานอื่นๆ'&&a['รหัสโครงการ']!==fp)return false;
     if(ft&&a['ประเภทกิจกรรม']!==ft)return false;
     const steps=a.steps||[];
     const allDone=steps.length>0&&steps.filter(s=>s['สถานะ']==='เสร็จ').length===steps.length;
     if(fst==='done'&&!allDone)return false;
     if(fst==='active'&&allDone)return false;
-    if(sq){const hay=[a['ชื่อกิจกรรม'],a['รหัสโครงการ'],a['ชื่อโครงการ'],a['ประเภทกิจกรรม'],a['หมายเหตุ']].join(' ').toLowerCase();if(!hay.includes(sq.toLowerCase()))return false;}
+    if(sq){const hay=[a['ชื่อกิจกรรม'],a['รหัสโครงการ'],a['ชื่อโครงการ'],a['ประเภทกิจกรรม'],a['หมายเหตุ'],piLabel(a['รหัสโครงการ'])].join(' ').toLowerCase();if(!hay.includes(sq.toLowerCase()))return false;}
     return true;
   });
 
-  h+=`<div class="cd" style="padding:0"><div style="padding:8px 14px;border-bottom:1px solid #334155;font-size:11px;color:#94A3B8">แสดง ${fd.length} จาก ${D.length}</div><div class="tw"><table><thead><tr><th></th><th>โครงการ</th><th>ประเภท</th><th>กิจกรรม</th><th>progress</th><th>deadline</th><th></th></tr></thead><tbody>`;
+  document.getElementById('listCount').textContent=`แสดง ${fd.length} จาก ${D.length}`;
+  document.getElementById('listHead').innerHTML=`<tr><th></th><th>โครงการ</th><th>ประเภท</th><th>กิจกรรม</th><th>progress</th><th>deadline</th><th></th></tr>`;
 
   const now=new Date();
+  let rows='';
   fd.forEach(a=>{
     const steps=a.steps||[];
     const ds=steps.filter(s=>s['สถานะ']==='เสร็จ').length;
     const ts=steps.length;
     const allDone=ts>0&&ds===ts;
     const pct=ts?Math.round(ds/ts*100):0;
-    const col=allDone?'#22C55E':pct>=50?'#3B82F6':'#F59E0B';
-    let dlTxt=a.deadline||'—';
+    const col=allDone?'#14938C':pct>=50?'#00587E':'#E6961A';
     let dlCls='';
     if(a.deadline&&!allDone){const diff=Math.ceil((new Date(a.deadline)-now)/864e5);if(diff<0)dlCls='stp-over';else if(diff<=7)dlCls='stp-dl';}
-    h+=`<tr>
+    rows+=`<tr>
       <td style="white-space:nowrap"><button class="b bg bs" onclick="openDetail('${a.id}')">📋</button> <button class="b bs" style="background:#DC262620;color:#DC2626;border:1px solid #DC262640" onclick="confirmDel('${a.id}','${(a['ชื่อกิจกรรม']||'').substring(0,20).replace(/'/g,"\\'")}')">🗑️</button></td>
       <td><span class="pl" onclick="openProjectLog('${a['รหัสโครงการ']}')">${piLabel(a['รหัสโครงการ'])}</span></td>
       <td><span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span></td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a['ชื่อกิจกรรม']||''}">${a['ชื่อกิจกรรม']||'-'}</td>
       <td style="min-width:100px"><div class="prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span class="prog-txt">${ds}/${ts}</span></div></td>
       <td class="${dlCls}" style="font-size:10px;white-space:nowrap">${fmtD(a.deadline)}</td>
-      <td><span class="bdg" style="background:${allDone?'#05966920':'#F59E0B20'};color:${allDone?'#059669':'#F59E0B'}">${allDone?'เสร็จสิ้น':'ดำเนินการ'}</span></td>
+      <td><span class="bdg" style="background:${allDone?'rgba(20,147,140,.1)':'rgba(230,150,26,.1)'};color:${allDone?'#14938C':'#E6961A'}">${allDone?'เสร็จสิ้น':'ดำเนินการ'}</span></td>
     </tr>`;
   });
-  h+=`</tbody></table></div></div>`;
-  document.getElementById('pg-list').innerHTML=h;
+  document.getElementById('listBody').innerHTML=rows||'<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748B">ไม่พบกิจกรรม</td></tr>';
 }
 
 // ============================================================
@@ -327,18 +337,18 @@ function renderDetail(a){
         ${a['ชื่อโครงการ']?`<p style="font-size:10px;color:#94A3B8;margin-top:4px">${a['ชื่อโครงการ']}</p>`:''}
       </div>
       <div style="text-align:right">
-        ${a.deadline?`<p style="font-size:10px;color:#64748B">deadline</p><p style="font-size:13px;font-weight:600;color:${allDone?'#059669':'#F59E0B'}">${fmtD(a.deadline)}</p>`:''}
-        <span class="bdg" style="margin-top:4px;background:${allDone?'#05966920':'#F59E0B20'};color:${allDone?'#059669':'#F59E0B'}">${allDone?'✅ เสร็จทั้งหมด':'กำลังดำเนินการ'}</span>
+        ${a.deadline?`<p style="font-size:10px;color:rgba(255,255,255,.55)">deadline</p><p style="font-size:13px;font-weight:600;color:${allDone?'#14938C':'#E6961A'}">${fmtD(a.deadline)}</p>`:''}
+        <span class="bdg" style="margin-top:4px;background:${allDone?'rgba(20,147,140,.1)':'rgba(230,150,26,.1)'};color:${allDone?'#14938C':'#E6961A'}">${allDone?'✅ เสร็จทั้งหมด':'กำลังดำเนินการ'}</span>
       </div>
     </div>
     <div style="margin-top:10px">
       <div style="display:flex;justify-content:space-between;font-size:10px;color:#94A3B8;margin-bottom:3px"><span>ความคืบหน้า</span><span>${ds}/${ts} (${pct}%)</span></div>
-      <div style="height:8px;background:#334155;border-radius:4px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${allDone?'#059669':'#3B82F6'};border-radius:4px;transition:.3s"></div></div>
+      <div style="height:8px;background:rgba(0,0,0,.06);border-radius:4px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${allDone?'#14938C':'#00587E'};border-radius:4px;transition:.3s"></div></div>
     </div>
   </div>`;
 
   // SOP Pipeline
-  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#CBD5E1;margin-bottom:10px">ขั้นตอน SOP</h3><div class="pipe">`;
+  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#111827;margin-bottom:10px">ขั้นตอน SOP</h3><div class="pipe">`;
 
   let foundCurrent=false;
   steps.forEach((s,i)=>{
@@ -366,7 +376,7 @@ function renderDetail(a){
     h+=`<div class="${cls}">
       <div class="${dotCls}">${dotTxt}</div>
       <div class="stp-info">
-        <div class="stp-name" style="color:${isDone?'#059669':isCurrent?'#F59E0B':isSkip?'#64748B':'#94A3B8'};${isSkip?'text-decoration:line-through':''}">
+        <div class="stp-name" style="color:${isDone?'#14938C':isCurrent?'#E6961A':isSkip?'#64748B':'#94A3B8'};${isSkip?'text-decoration:line-through':''}">
           ${s['ลำดับ']}. ${s['ชื่อขั้นตอน']}
         </div>
         ${meta?`<div class="stp-meta">${meta}</div>`:''}
@@ -404,14 +414,21 @@ async function markStep(stepRow, status, actId){
 // ADD ACTIVITY
 // ============================================================
 function openAdd(){
-  const projOpts='<option value="">-- เลือก --</option><option value="งานอื่นๆ">งานอื่นๆ (ไม่ใช่โครงการ)</option>'+P.map(p=>`<option value="${p.code}">${p.code} - ${p.name.substring(0,30)}</option>`).join('');
   const typeOpts='<option value="">-- เลือกประเภท --</option>'+TK.map(t=>`<option value="${t}">${t}</option>`).join('');
 
   document.getElementById('modal').innerHTML=`<div class="mo" onclick="if(event.target===this)closeM()"><div class="md">
     <div class="md-h"><h2>สร้างกิจกรรมใหม่</h2><button class="b bg bs" onclick="closeM()">✕</button></div>
     <div class="md-b">
       <div class="fg">
-        <div class="fgi"><label class="fgl">โครงการ</label><select class="fsl" id="fa_proj" onchange="toggleOther()">${projOpts}</select></div>
+        <div class="fgi" style="position:relative">
+          <label class="fgl">โครงการ (พิมพ์เพื่อค้นหา)</label>
+          <input class="fi" id="fa_proj_search" placeholder="พิมพ์ชื่อ รหัส หรือหัวหน้า..." oninput="filterProjects()" onfocus="document.getElementById('projDropdown').style.display='block'" autocomplete="off">
+          <input type="hidden" id="fa_proj" value="">
+          <div id="projDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;max-height:200px;overflow-y:auto;background:#fff;border:1px solid #E5E7EB;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.1);margin-top:2px">
+            <div class="proj-item" style="padding:7px 10px;cursor:pointer;font-size:11px;color:#F59E0B;border-bottom:1px solid #F3F4F6" onclick="selectProject('งานอื่นๆ','งานอื่นๆ (ไม่ใช่โครงการ)')">งานอื่นๆ (ไม่ใช่โครงการ)</div>
+            ${P.map(p=>`<div class="proj-item" data-search="${p.code} ${p.name} ${p.pi||''}" style="padding:7px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid #F3F4F6" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background=''" onclick="selectProject('${p.code}','${p.code} (${(p.pi||'').substring(0,20)})')"><span style="color:#00587E">${p.code}</span> ${p.pi?'<span style="color:#111827">'+p.pi.substring(0,20)+'</span>':''}<br><span style="font-size:9px;color:#6B7280">${p.name.substring(0,40)}</span></div>`).join('')}
+          </div>
+        </div>
         <div class="fgi"><label class="fgl">ประเภทกิจกรรม</label><select class="fsl" id="fa_type" onchange="loadSOP()">${typeOpts}</select></div>
         <div class="fgi fl" id="fa_other_g" style="display:none"><label class="fgl">ระบุงาน</label><input class="fi" id="fa_other" placeholder="เช่น ประชุมทีม..."></div>
         <div class="fgi fl"><label class="fgl">ชื่อกิจกรรม</label><input class="fi" id="fa_name" placeholder="เช่น เบิกเงินงวด 2"></div>
@@ -422,9 +439,30 @@ function openAdd(){
     </div>
     <div class="md-f"><button class="b bg" onclick="closeM()">ยกเลิก</button><button class="b bp" id="fa_save" onclick="saveAdd()">💾 สร้าง</button></div>
   </div></div>`;
+
+  // Close dropdown when clicking outside
+  document.querySelector('.mo').addEventListener('click',function(e){
+    if(!e.target.closest('#fa_proj_search')&&!e.target.closest('#projDropdown'))
+      document.getElementById('projDropdown').style.display='none';
+  });
 }
 
-function toggleOther(){document.getElementById('fa_other_g').style.display=document.getElementById('fa_proj').value==='งานอื่นๆ'?'flex':'none';}
+function filterProjects(){
+  const q=document.getElementById('fa_proj_search').value.toLowerCase();
+  const dd=document.getElementById('projDropdown');
+  dd.style.display='block';
+  dd.querySelectorAll('.proj-item').forEach(el=>{
+    const s=(el.dataset.search||'งานอื่นๆ').toLowerCase();
+    el.style.display=(!q||s.includes(q))?'block':'none';
+  });
+}
+
+function selectProject(code, label){
+  document.getElementById('fa_proj').value=code;
+  document.getElementById('fa_proj_search').value=label;
+  document.getElementById('projDropdown').style.display='none';
+  document.getElementById('fa_other_g').style.display=code==='งานอื่นๆ'?'flex':'none';
+}
 
 function loadSOP(){
   const type=document.getElementById('fa_type').value;
@@ -495,7 +533,7 @@ async function saveEdit(row,id){
 function confirmDel(id,name){
   document.getElementById('modal').innerHTML=`<div class="mo" onclick="if(event.target===this)closeM()"><div class="md" style="max-width:400px">
     <div class="md-h"><h2>⚠️ ยืนยันการลบ</h2><button class="b bg bs" onclick="closeM()">✕</button></div>
-    <div class="md-b"><p style="font-size:12px;color:#CBD5E1">ลบกิจกรรม <b style="color:#F59E0B">"${name}"</b> และขั้นตอนทั้งหมด?</p><p style="font-size:10px;color:#DC2626;margin-top:6px">⚠️ ไม่สามารถเรียกคืนได้</p></div>
+    <div class="md-b"><p style="font-size:12px;color:#111827">ลบกิจกรรม <b style="color:#F59E0B">"${name}"</b> และขั้นตอนทั้งหมด?</p><p style="font-size:10px;color:#DC2626;margin-top:6px">⚠️ ไม่สามารถเรียกคืนได้</p></div>
     <div class="md-f"><button class="b bg" onclick="closeM()">ยกเลิก</button><button class="b bd" onclick="doDel('${id}')">🗑️ ลบ</button></div>
   </div></div>`;
 }
@@ -551,22 +589,22 @@ function renderReport(){
 
   h+=`<div class="sg sg3">
     <div class="st"><div class="lb">ขั้นตอนที่เสร็จ</div><div class="vl" style="color:#22C55E">${doneSteps}</div></div>
-    <div class="st"><div class="lb">กิจกรรมที่เสร็จทั้งหมด</div><div class="vl" style="color:#60A5FA">${completedActivities.length}</div></div>
+    <div class="st"><div class="lb">กิจกรรมที่เสร็จทั้งหมด</div><div class="vl" style="color:#00587E">${completedActivities.length}</div></div>
     <div class="st"><div class="lb">โครงการที่ดูแล</div><div class="vl" style="color:#A855F7">${projCount}</div></div>
   </div>`;
 
   // Bars by type
-  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#CBD5E1;margin-bottom:8px">สรุปตามประเภทกิจกรรม</h3>`;
+  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#111827;margin-bottom:8px">สรุปตามประเภทกิจกรรม</h3>`;
   const sortedT=Object.entries(byType).sort((a,b)=>b[1]-a[1]);
   const maxT=Math.max(...sortedT.map(s=>s[1]),1);
-  sortedT.forEach(([k,v])=>{h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:11px"><span style="min-width:140px;color:#94A3B8">${k}</span><div style="flex:1;height:14px;background:#334155;border-radius:4px;overflow:hidden"><div style="width:${v/maxT*100}%;height:100%;background:${tc(k)};border-radius:4px;display:flex;align-items:center;padding-left:4px;font-size:9px;color:#fff;font-weight:700">${v}</div></div><span style="min-width:24px;text-align:right;color:#CBD5E1">${v}</span></div>`;});
+  sortedT.forEach(([k,v])=>{h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:11px"><span style="min-width:140px;color:#94A3B8">${k}</span><div style="flex:1;height:14px;background:rgba(0,0,0,.06);border-radius:4px;overflow:hidden"><div style="width:${v/maxT*100}%;height:100%;background:${tc(k)};border-radius:4px;display:flex;align-items:center;padding-left:4px;font-size:9px;color:#fff;font-weight:700">${v}</div></div><span style="min-width:24px;text-align:right;color:#111827">${v}</span></div>`;});
   h+=`</div>`;
 
   // Bars by project
-  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#CBD5E1;margin-bottom:8px">สรุปตามโครงการ</h3>`;
+  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#111827;margin-bottom:8px">สรุปตามโครงการ</h3>`;
   const sortedP=Object.entries(byProj).sort((a,b)=>b[1]-a[1]);
   const maxP=Math.max(...sortedP.map(s=>s[1]),1);
-  sortedP.forEach(([k,v])=>{h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:11px"><span style="min-width:120px;color:#94A3B8;font-family:monospace;font-size:10px">${k}</span><div style="flex:1;height:14px;background:#334155;border-radius:4px;overflow:hidden"><div style="width:${v/maxP*100}%;height:100%;background:#3B82F6;border-radius:4px;display:flex;align-items:center;padding-left:4px;font-size:9px;color:#fff;font-weight:700">${v}</div></div><span style="min-width:24px;text-align:right;color:#CBD5E1">${v}</span></div>`;});
+  sortedP.forEach(([k,v])=>{h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:11px"><span style="min-width:120px;color:#94A3B8;font-family:monospace;font-size:10px">${k}</span><div style="flex:1;height:14px;background:rgba(0,0,0,.06);border-radius:4px;overflow:hidden"><div style="width:${v/maxP*100}%;height:100%;background:#00587E;border-radius:4px;display:flex;align-items:center;padding-left:4px;font-size:9px;color:#fff;font-weight:700">${v}</div></div><span style="min-width:24px;text-align:right;color:#111827">${v}</span></div>`;});
   h+=`</div>`;
 
   document.getElementById('pg-report').innerHTML=h;
@@ -594,12 +632,12 @@ function openProjectLog(code){
 
   // Project header
   h+=`<div class="cd" style="padding:16px">
-    <p style="font-size:10px;color:#64748B">ประวัติกิจกรรมโครงการ</p>
+    <p style="font-size:10px;color:rgba(255,255,255,.55)">ประวัติกิจกรรมโครงการ</p>
     <h2 style="font-size:16px;font-weight:700;margin:4px 0">${code}</h2>
-    ${piName?`<p style="font-size:12px;color:#60A5FA;margin-bottom:2px">หัวหน้า: ${piName}</p>`:''}
+    ${piName?`<p style="font-size:12px;color:#00587E;margin-bottom:2px">หัวหน้า: ${piName}</p>`:''}
     ${projName?`<p style="font-size:11px;color:#94A3B8">${projName}</p>`:''}
     <div style="display:flex;gap:12px;margin-top:10px">
-      <div style="font-size:11px"><span style="color:#64748B">กิจกรรมทั้งหมด:</span> <b style="color:#60A5FA">${projActs.length}</b></div>
+      <div style="font-size:11px"><span style="color:#64748B">กิจกรรมทั้งหมด:</span> <b style="color:#00587E">${projActs.length}</b></div>
       <div style="font-size:11px"><span style="color:#64748B">ขั้นตอนเสร็จ:</span> <b style="color:#22C55E">${doneSteps}/${totalSteps}</b></div>
     </div>
   </div>`;
@@ -614,7 +652,7 @@ function openProjectLog(code){
       const ts=steps.length;
       const allDone=ts>0&&ds===ts;
       const pct=ts?Math.round(ds/ts*100):0;
-      const col=allDone?'#059669':pct>=50?'#3B82F6':'#F59E0B';
+      const col=allDone?'#14938C':pct>=50?'#00587E':'#E6961A';
       const cur=steps.find(s=>s['สถานะ']==='รอ');
 
       h+=`<div class="cd" style="cursor:pointer" onclick="openDetail('${a.id}')">
@@ -629,11 +667,11 @@ function openProjectLog(code){
           </div>
           <div style="text-align:right">
             <div class="prog" style="min-width:100px"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span class="prog-txt">${ds}/${ts}</span></div>
-            ${a.deadline?`<p style="font-size:10px;color:#64748B;margin-top:4px">deadline: ${fmtD(a.deadline)}</p>`:''}
+            ${a.deadline?`<p style="font-size:10px;color:rgba(255,255,255,.55);margin-top:4px">deadline: ${fmtD(a.deadline)}</p>`:''}
           </div>
         </div>
         ${steps.length?`<div style="display:flex;gap:3px;margin-top:8px;flex-wrap:wrap">${steps.map(s=>{
-          const c=s['สถานะ']==='เสร็จ'?'#059669':s['สถานะ']==='ข้าม'?'#475569':'#334155';
+          const c=s['สถานะ']==='เสร็จ'?'#14938C':s['สถานะ']==='ข้าม'?'#475569':'#334155';
           return`<div style="width:${100/ts}%;max-width:40px;height:4px;background:${c};border-radius:2px" title="${s['ชื่อขั้นตอน']}: ${s['สถานะ']}"></div>`;
         }).join('')}</div>`:''}
       </div>`;
