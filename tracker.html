@@ -119,7 +119,7 @@ tr:hover{background:rgba(0,88,126,.04)}
 <div id="toasts"></div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbya3mXipl5aYu9GJyQYHzXmmcjRdcXDqWV6IwQI1jXa0OBddXDzjL13IzIcuKKNyY-p/exec';
+const API='YOUR_APPS_SCRIPT_WEB_APP_URL';
 let D=[],P=[],T={},TK=[];
 const SC={'เสร็จ':'#14938C','รอ':'#7A9BBF','ข้าม':'#475569'};
 const TC={'การทำสัญญา':'#00587E','เบิกจ่ายเงินงวด':'#E6961A','ส่งผู้ทรงประเมินรายงาน':'#8B5CF6','เบิกเงินงวดสุดท้าย':'#EC4899','แจ้งคืนเงินคงเหลือ':'#06B6D4','อนุมัติปิดโครงการ':'#64748B','จัดทำหนังสือรับรอง':'#10B981','ขออนุมัติขยายเวลา':'#EF4444','ขออนุมัติเปลี่ยนงบ':'#D946EF','งานอื่นๆ':'#94A3B8'};
@@ -222,17 +222,18 @@ function renderDash(){
 
   // Next actions
   if(nextActions.length){
-    h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#111827;margin-bottom:8px">ขั้นตอนถัดไปที่ต้องทำ (${nextActions.length} กิจกรรม)</h3><div class="tw"><table><thead><tr><th>โครงการ</th><th>หัวหน้า</th><th>กิจกรรม</th><th>ขั้นตอนถัดไป</th><th style="min-width:100px">progress</th><th></th></tr></thead><tbody>`;
+    h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#111827;margin-bottom:8px">ขั้นตอนถัดไปที่ต้องทำ (${nextActions.length} กิจกรรม)</h3><div class="tw"><table><thead><tr><th>วันที่</th><th>โครงการ</th><th>หัวหน้าโครงการ</th><th>กิจกรรมที่ดำเนินการ</th><th>ขั้นตอนถัดไป</th><th style="min-width:100px">progress</th><th></th></tr></thead><tbody>`;
     nextActions.forEach(({act:a,step:s,doneSteps:ds,totalSteps:ts})=>{
       const pct=ts?Math.round(ds/ts*100):0;
       const col=pct>=75?'#14938C':pct>=50?'#00587E':'#E6961A';
       const proj=P.find(x=>x.code===a['รหัสโครงการ']);
       const piName=proj?proj.pi:'—';
       h+=`<tr>
+        <td style="font-size:10px;white-space:nowrap;color:var(--muted)">${fmtD(a['สร้างเมื่อ'])}</td>
         <td><span class="pl" onclick="openDetail('${a.id}')">${a['รหัสโครงการ']||'งานอื่นๆ'}</span></td>
-        <td style="font-size:10px;color:#111827;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${piName}">${piName}</td>
+        <td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${piName}">${piName}</td>
         <td style="font-size:11px">${a['ชื่อกิจกรรม']||a['ประเภทกิจกรรม']||''}</td>
-        <td><span class="bdg" style="background:#F59E0B20;color:#E6961A">${s['ชื่อขั้นตอน']}</span></td>
+        <td><span class="bdg" style="background:rgba(230,150,26,.1);color:#E6961A">${s['ชื่อขั้นตอน']}</span></td>
         <td><div class="prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span class="prog-txt">${ds}/${ts}</span></div></td>
         <td style="white-space:nowrap"><button class="b bs" style="background:var(--teal);color:#fff" onclick="openDetail('${a.id}')">ดู</button> <button class="b bs" style="background:#F3F4F6;color:var(--teal);border:1px solid #D1D5DB" onclick="openProjectLog('${a['รหัสโครงการ']}')">Log</button></td>
       </tr>`;
@@ -282,7 +283,7 @@ function renderListBody(){
   });
 
   document.getElementById('listCount').textContent=`แสดง ${fd.length} จาก ${D.length}`;
-  document.getElementById('listHead').innerHTML=`<tr><th></th><th>โครงการ</th><th>ประเภท</th><th>กิจกรรม</th><th>progress</th><th>deadline</th><th></th></tr>`;
+  document.getElementById('listHead').innerHTML=`<tr><th></th><th>วันที่สร้าง</th><th>โครงการ</th><th>ประเภท</th><th>กิจกรรม</th><th>progress</th><th>deadline</th><th></th></tr>`;
 
   const now=new Date();
   let rows='';
@@ -297,6 +298,7 @@ function renderListBody(){
     if(a.deadline&&!allDone){const diff=Math.ceil((new Date(a.deadline)-now)/864e5);if(diff<0)dlCls='stp-over';else if(diff<=7)dlCls='stp-dl';}
     rows+=`<tr>
       <td style="white-space:nowrap"><button class="b bs" style="background:var(--teal);color:#fff" onclick="openDetail('${a.id}')">📋 ดู</button> <button class="b bs" style="background:#FEE2E2;color:#DC2626;border:1px solid #FECACA" onclick="confirmDel('${a.id}','${(a['ชื่อกิจกรรม']||'').substring(0,20).replace(/'/g,"\\'")}')">🗑️</button></td>
+      <td style="font-size:10px;white-space:nowrap;color:var(--muted)">${fmtD(a['สร้างเมื่อ'])}</td>
       <td><span class="pl" onclick="openProjectLog('${a['รหัสโครงการ']}')">${piLabel(a['รหัสโครงการ'])}</span></td>
       <td><span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span></td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a['ชื่อกิจกรรม']||''}">${a['ชื่อกิจกรรม']||'-'}</td>
@@ -305,7 +307,7 @@ function renderListBody(){
       <td><span class="bdg" style="background:${allDone?'rgba(20,147,140,.1)':'rgba(230,150,26,.1)'};color:${allDone?'#14938C':'#E6961A'}">${allDone?'เสร็จสิ้น':'ดำเนินการ'}</span></td>
     </tr>`;
   });
-  document.getElementById('listBody').innerHTML=rows||'<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748B">ไม่พบกิจกรรม</td></tr>';
+  document.getElementById('listBody').innerHTML=rows||'<tr><td colspan="8" style="text-align:center;padding:20px;color:#64748B">ไม่พบกิจกรรม</td></tr>';
 }
 
 // ============================================================
@@ -685,7 +687,7 @@ function openProjectLog(code){
 // ============================================================
 // HELPERS
 // ============================================================
-function fmtD(d){if(!d)return'—';const p=String(d).substring(0,10).split('-');if(p.length!==3)return d;return`${+p[2]}/${+p[1]}/${+p[0]+543}`;}
+function fmtD(d){if(!d)return'—';const p=String(d).substring(0,10).split('-');if(p.length!==3)return d;const M=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return`${+p[2]} ${M[+p[1]]} ${+p[0]+543}`;}
 function closeM(){document.getElementById('modal').innerHTML='';}
 function toast(m,t){const e=document.createElement('div');e.className='toast t-'+(t==='err'?'err':'ok');e.textContent=m;document.getElementById('toasts').appendChild(e);setTimeout(()=>e.remove(),2500);}
 
