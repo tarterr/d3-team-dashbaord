@@ -152,7 +152,7 @@ async function api(p){const u=new URL(API);for(let k in p)u.searchParams.set(k,p
 
 async function load(){
   try{
-    const[a,p,t]=await Promise.all([api({action:'getAll'}),api({action:'getProjects'}),api({action:'getTemplates'})]);
+    const[a,p,t]=await Promise.all([api({action:'getActivities'}),api({action:'getProjects'}),api({action:'getTemplates'})]);
     if(a.success)D=a.data;
     if(p.success)P=p.data;
     if(t.success){T=t.templates;TK=t.types;}
