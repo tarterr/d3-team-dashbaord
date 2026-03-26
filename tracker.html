@@ -119,7 +119,7 @@ tr:hover{background:rgba(0,88,126,.04)}
 <div id="toasts"></div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbwJai7Pxc9gaN3gIDR4GSe8szzS-Jxoby97Ov0uPRSabXtnSII-Uil3uZ7fsy-TSiOA/exec';
+const API='https://script.google.com/macros/s/AKfycbydrPFJGhrCG06ZcOGsYYmYIGnoEQ-0GNvHdaOMQhbx0R9CluZHECMPivWkJsPBA6tw/exec';
 let D=[],P=[],T={},TK=[];
 const SC={'เสร็จ':'#14938C','รอ':'#7A9BBF','ข้าม':'#475569'};
 const TC={'การทำสัญญา':'#00587E','เบิกจ่ายเงินงวด':'#E6961A','ส่งผู้ทรงประเมินรายงาน':'#8B5CF6','เบิกเงินงวดสุดท้าย':'#EC4899','แจ้งคืนเงินคงเหลือ':'#06B6D4','อนุมัติปิดโครงการ':'#64748B','จัดทำหนังสือรับรอง':'#10B981','ขออนุมัติขยายเวลา':'#EF4444','ขออนุมัติเปลี่ยนงบ':'#D946EF','งานอื่นๆ':'#94A3B8'};
@@ -663,25 +663,58 @@ function renderReport(){
   // ============================================================
   h+=`<div class="cd"><h3 style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:12px">⚡ ประสิทธิภาพการทำงาน</h3>`;
 
-  // ระยะเวลาเฉลี่ยต่อประเภท
-  h+=`<p style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">ระยะเวลาเฉลี่ยต่อประเภทกิจกรรม (วัน)</p>`;
-  const avgEntries=Object.entries(avgDaysByType).map(([k,v])=>({type:k,avg:Math.round(v.total/v.count),count:v.count})).sort((a,b)=>b.avg-a.avg);
+  // Tab toggle
+  h+=`<div style="display:flex;gap:2px;background:#F3F4F6;border-radius:8px;padding:2px;margin-bottom:14px;width:fit-content">
+    <button class="b bs" id="tab-main" style="background:var(--teal);color:#fff" onclick="document.getElementById('rpt-main').style.display='block';document.getElementById('rpt-step').style.display='none';this.style.background='var(--teal)';this.style.color='#fff';document.getElementById('tab-step').style.background='transparent';document.getElementById('tab-step').style.color='var(--text2)'">กิจกรรมหลัก</button>
+    <button class="b bs" id="tab-step" style="background:transparent;color:var(--text2)" onclick="document.getElementById('rpt-step').style.display='block';document.getElementById('rpt-main').style.display='none';this.style.background='var(--teal)';this.style.color='#fff';document.getElementById('tab-main').style.background='transparent';document.getElementById('tab-main').style.color='var(--text2)'">ขั้นตอนย่อย</button>
+  </div>`;
+
+  // === TAB: กิจกรรมหลัก ===
+  h+=`<div id="rpt-main">`;
+  h+=`<p style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">ระยะเวลาเฉลี่ยทั้งกระบวนการ ตั้งแต่รับเรื่อง → เสร็จสิ้น (วัน)</p>`;
   if(avgEntries.length){
     const maxAvg=Math.max(...avgEntries.map(e=>e.avg),1);
     avgEntries.forEach(e=>{
       const col=e.avg>30?'#DC2626':e.avg>14?'#E6961A':'#14938C';
       h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px">
         <span style="min-width:160px;color:var(--text2)">${e.type}</span>
-        <div style="flex:1;height:16px;background:rgba(0,0,0,.04);border-radius:4px;overflow:hidden">
+        <div style="flex:1;height:18px;background:rgba(0,0,0,.04);border-radius:4px;overflow:hidden">
           <div style="width:${e.avg/maxAvg*100}%;height:100%;background:${col};border-radius:4px;display:flex;align-items:center;padding-left:6px;font-size:10px;color:#fff;font-weight:600">${e.avg} วัน</div>
         </div>
         <span style="min-width:60px;text-align:right;color:var(--muted);font-size:10px">(${e.count} งาน)</span>
       </div>`;
     });
-  } else { h+=`<p style="font-size:11px;color:var(--muted)">ยังไม่มีข้อมูล (ต้องมีกิจกรรมที่เสร็จสมบูรณ์แล้ว)</p>`; }
 
-  // ขั้นตอนคอขวด
-  h+=`<p style="font-size:12px;color:var(--muted);margin:16px 0 8px;font-weight:500">ขั้นตอนที่ใช้เวลามากที่สุด (คอขวด)</p>`;
+    // เพิ่มตารางรายละเอียด
+    h+=`<div style="overflow-x:auto;margin-top:12px"><table><thead><tr><th>ประเภท</th><th>เฉลี่ย (วัน)</th><th>เร็วสุด</th><th>นานสุด</th><th>จำนวน</th></tr></thead><tbody>`;
+    // คำนวณ min/max ต่อประเภท
+    const detailByType={};
+    D.forEach(a=>{
+      const steps=a.steps||[];
+      const allDone=steps.length>0&&steps.filter(s=>s['สถานะ']==='เสร็จ').length===steps.length;
+      if(!allDone||!a['สร้างเมื่อ'])return;
+      const type=a['ประเภทกิจกรรม']||'ไม่ระบุ';
+      const lastDone=steps.filter(s=>s['วันที่เสร็จ']).map(s=>s['วันที่เสร็จ']).sort().pop();
+      if(!lastDone)return;
+      const days=Math.max(1,Math.ceil((new Date(lastDone)-new Date(String(a['สร้างเมื่อ']).substring(0,10)))/864e5));
+      if(!detailByType[type])detailByType[type]={min:999,max:0,total:0,count:0};
+      detailByType[type].min=Math.min(detailByType[type].min,days);
+      detailByType[type].max=Math.max(detailByType[type].max,days);
+      detailByType[type].total+=days;
+      detailByType[type].count++;
+    });
+    Object.entries(detailByType).sort((a,b)=>Math.round(b[1].total/b[1].count)-Math.round(a[1].total/a[1].count)).forEach(([k,v])=>{
+      const avg=Math.round(v.total/v.count);
+      const col=avg>30?'#DC2626':avg>14?'#E6961A':'#14938C';
+      h+=`<tr><td style="font-size:12px">${k}</td><td style="font-weight:600;color:${col}">${avg}</td><td style="color:#14938C">${v.min}</td><td style="color:#DC2626">${v.max}</td><td style="color:var(--muted)">${v.count}</td></tr>`;
+    });
+    h+=`</tbody></table></div>`;
+  } else { h+=`<p style="font-size:11px;color:var(--muted)">ยังไม่มีข้อมูล (ต้องมีกิจกรรมที่เสร็จสมบูรณ์แล้ว)</p>`; }
+  h+=`</div>`;
+
+  // === TAB: ขั้นตอนย่อย ===
+  h+=`<div id="rpt-step" style="display:none">`;
+  h+=`<p style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">ขั้นตอนที่ใช้เวลามากที่สุด — คอขวด (วัน)</p>`;
   const bnEntries=Object.entries(bottleneckSteps).map(([k,v])=>({step:k,avg:Math.round(v.total/v.count),max:v.max,count:v.count})).sort((a,b)=>b.avg-a.avg).slice(0,8);
   if(bnEntries.length){
     h+=`<div style="overflow-x:auto"><table><thead><tr><th>ขั้นตอน</th><th>เฉลี่ย (วัน)</th><th>นานสุด (วัน)</th><th>จำนวนครั้ง</th></tr></thead><tbody>`;
@@ -691,7 +724,8 @@ function renderReport(){
     });
     h+=`</tbody></table></div>`;
   } else { h+=`<p style="font-size:11px;color:var(--muted)">ยังไม่มีข้อมูล</p>`; }
-  h+=`</div>`;
+  h+=`</div>`; // close rpt-step
+  h+=`</div>`; // close cd card
 
   // ============================================================
   // กลุ่ม 2: ภาระงานปัจจุบัน
