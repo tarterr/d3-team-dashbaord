@@ -544,11 +544,12 @@ function confirmDel(id,name){
 async function doDel(id){closeM();await api({action:'deleteActivity',actId:id});toast('ลบสำเร็จ','ok');await load();showPage('list');}
 
 // ============================================================
-// REPORT
+// REPORT — 3 กลุ่ม: ประสิทธิภาพ / ภาระงาน / ผลงานรวม
 // ============================================================
 function renderReport(){
   const now=new Date();
   const curY=now.getFullYear().toString();
+  const MN=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
   let h=`<div class="tb">
     <select class="fs" id="ry" onchange="renderReport()"></select>
@@ -558,64 +559,286 @@ function renderReport(){
     </select>
   </div>`;
 
-  // Get filter values from existing DOM or default
   const ry=(document.getElementById('ry')||{}).value||curY;
   const rm=(document.getElementById('rm')||{}).value||'';
 
-  // Count completed steps as "work done"
-  let totalSteps=0, doneSteps=0;
-  const byType={}, byProj={};
-  const completedActivities=[];
+  // ============================================================
+  // คำนวณข้อมูลทั้งหมด
+  // ============================================================
+  let doneSteps=0;
+  const completedActs=[];
+  const pendingActs=[];
+  const overdueActs=[];
+  const byType={};
+  const byProj={};
+  const avgDaysByType={};
+  const bottleneckSteps={};
+  const monthlyDone={};
+  const monthlyCreated={};
 
   D.forEach(a=>{
-    (a.steps||[]).forEach(s=>{
-      const d=s['วันที่เสร็จ']||'';
-      if(!d)return;
-      if(ry&&!d.startsWith(ry))return;
-      if(rm&&d.substring(5,7)!==rm)return;
-      totalSteps++;
-      if(s['สถานะ']==='เสร็จ'){
-        doneSteps++;
-        const t=a['ประเภทกิจกรรม']||'ไม่ระบุ';
-        byType[t]=(byType[t]||0)+1;
-        const p=piLabel(a['รหัสโครงการ']);
-        byProj[p]=(byProj[p]||0)+1;
+    const steps=a.steps||[];
+    const ds=steps.filter(s=>s['สถานะ']==='เสร็จ').length;
+    const ts=steps.length;
+    const allDone=ts>0&&ds===ts;
+    const type=a['ประเภทกิจกรรม']||'ไม่ระบุ';
+
+    // --- นับกิจกรรมที่สร้างตามเดือน ---
+    if(a['สร้างเมื่อ']){
+      const cym=String(a['สร้างเมื่อ']).substring(0,7);
+      if(cym.length===7) monthlyCreated[cym]=(monthlyCreated[cym]||0)+1;
+    }
+
+    // --- ผลงานรวม: นับกิจกรรมเสร็จตามเดือน ---
+    if(allDone){
+      const lastDone=steps.filter(s=>s['วันที่เสร็จ']).map(s=>s['วันที่เสร็จ']).sort().pop();
+      if(lastDone){
+        const ym=lastDone.substring(0,7);
+        if(!ry||lastDone.startsWith(ry)){
+          if(!rm||lastDone.substring(5,7)===rm) completedActs.push(a);
+        }
+        if(lastDone.startsWith(ry)){
+          monthlyDone[ym]=(monthlyDone[ym]||0)+1;
+        }
+      }
+    }
+
+    // --- ประสิทธิภาพ: ระยะเวลาเฉลี่ย ---
+    if(allDone && a['สร้างเมื่อ']){
+      const lastDone=steps.filter(s=>s['วันที่เสร็จ']).map(s=>s['วันที่เสร็จ']).sort().pop();
+      if(lastDone){
+        const start=new Date(String(a['สร้างเมื่อ']).substring(0,10));
+        const end=new Date(lastDone);
+        const days=Math.max(1,Math.ceil((end-start)/864e5));
+        if(!avgDaysByType[type])avgDaysByType[type]={total:0,count:0};
+        avgDaysByType[type].total+=days;
+        avgDaysByType[type].count++;
+      }
+    }
+
+    // --- ประสิทธิภาพ: ขั้นตอนคอขวด (ขั้นตอนที่ค้างนานสุด) ---
+    steps.forEach(s=>{
+      if(s['สถานะ']==='เสร็จ'&&s['วันที่เสร็จ']){
+        // หาว่าขั้นตอนนี้ใช้เวลากี่วัน (จากวันที่ขั้นตอนก่อนเสร็จ หรือวันสร้าง)
+        const stepIdx=steps.indexOf(s);
+        let prevDate=a['สร้างเมื่อ']?String(a['สร้างเมื่อ']).substring(0,10):null;
+        if(stepIdx>0&&steps[stepIdx-1]['วันที่เสร็จ'])prevDate=steps[stepIdx-1]['วันที่เสร็จ'];
+        if(prevDate){
+          const d1=new Date(prevDate),d2=new Date(s['วันที่เสร็จ']);
+          const days=Math.max(0,Math.ceil((d2-d1)/864e5));
+          const key=s['ชื่อขั้นตอน']||'ไม่ระบุ';
+          if(!bottleneckSteps[key])bottleneckSteps[key]={total:0,count:0,max:0};
+          bottleneckSteps[key].total+=days;
+          bottleneckSteps[key].count++;
+          bottleneckSteps[key].max=Math.max(bottleneckSteps[key].max,days);
+        }
       }
     });
-    // Check if all steps done
-    const steps=a.steps||[];
-    const allDone=steps.length>0&&steps.filter(s=>s['สถานะ']==='เสร็จ').length===steps.length;
-    if(allDone)completedActivities.push(a);
+
+    // --- นับขั้นตอนเสร็จ ---
+    steps.forEach(s=>{
+      const d=s['วันที่เสร็จ']||'';
+      if(!d||s['สถานะ']!=='เสร็จ')return;
+      if(ry&&!d.startsWith(ry))return;
+      if(rm&&d.substring(5,7)!==rm)return;
+      doneSteps++;
+      byType[type]=(byType[type]||0)+1;
+      byProj[piLabel(a['รหัสโครงการ'])]=(byProj[piLabel(a['รหัสโครงการ'])]||0)+1;
+    });
+
+    // --- ภาระงาน: งานค้าง + เกินกำหนด ---
+    if(!allDone){
+      pendingActs.push(a);
+      if(a.deadline){
+        const diff=Math.ceil((new Date(a.deadline)-now)/864e5);
+        if(diff<0)overdueActs.push({...a,overdueDays:Math.abs(diff)});
+      }
+    }
   });
 
-  const projCount=new Set(Object.keys(byProj).filter(k=>k!=='งานอื่นๆ')).size;
+  overdueActs.sort((a,b)=>b.overdueDays-a.overdueDays);
 
-  h+=`<div class="sg sg3">
-    <div class="st"><div class="lb">ขั้นตอนที่เสร็จ</div><div class="vl" style="color:#22C55E">${doneSteps}</div></div>
-    <div class="st"><div class="lb">กิจกรรมที่เสร็จทั้งหมด</div><div class="vl" style="color:#00587E">${completedActivities.length}</div></div>
-    <div class="st"><div class="lb">โครงการที่ดูแล</div><div class="vl" style="color:#A855F7">${projCount}</div></div>
-  </div>`;
+  // ============================================================
+  // กลุ่ม 1: ประสิทธิภาพการทำงาน
+  // ============================================================
+  h+=`<div class="cd"><h3 style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:12px">⚡ ประสิทธิภาพการทำงาน</h3>`;
 
-  // Bars by type
-  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#111827;margin-bottom:8px">สรุปตามประเภทกิจกรรม</h3>`;
-  const sortedT=Object.entries(byType).sort((a,b)=>b[1]-a[1]);
-  const maxT=Math.max(...sortedT.map(s=>s[1]),1);
-  sortedT.forEach(([k,v])=>{h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:11px"><span style="min-width:140px;color:#94A3B8">${k}</span><div style="flex:1;height:14px;background:rgba(0,0,0,.06);border-radius:4px;overflow:hidden"><div style="width:${v/maxT*100}%;height:100%;background:${tc(k)};border-radius:4px;display:flex;align-items:center;padding-left:4px;font-size:9px;color:#fff;font-weight:700">${v}</div></div><span style="min-width:24px;text-align:right;color:#111827">${v}</span></div>`;});
+  // ระยะเวลาเฉลี่ยต่อประเภท
+  h+=`<p style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">ระยะเวลาเฉลี่ยต่อประเภทกิจกรรม (วัน)</p>`;
+  const avgEntries=Object.entries(avgDaysByType).map(([k,v])=>({type:k,avg:Math.round(v.total/v.count),count:v.count})).sort((a,b)=>b.avg-a.avg);
+  if(avgEntries.length){
+    const maxAvg=Math.max(...avgEntries.map(e=>e.avg),1);
+    avgEntries.forEach(e=>{
+      const col=e.avg>30?'#DC2626':e.avg>14?'#E6961A':'#14938C';
+      h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px">
+        <span style="min-width:160px;color:var(--text2)">${e.type}</span>
+        <div style="flex:1;height:16px;background:rgba(0,0,0,.04);border-radius:4px;overflow:hidden">
+          <div style="width:${e.avg/maxAvg*100}%;height:100%;background:${col};border-radius:4px;display:flex;align-items:center;padding-left:6px;font-size:10px;color:#fff;font-weight:600">${e.avg} วัน</div>
+        </div>
+        <span style="min-width:60px;text-align:right;color:var(--muted);font-size:10px">(${e.count} งาน)</span>
+      </div>`;
+    });
+  } else { h+=`<p style="font-size:11px;color:var(--muted)">ยังไม่มีข้อมูล (ต้องมีกิจกรรมที่เสร็จสมบูรณ์แล้ว)</p>`; }
+
+  // ขั้นตอนคอขวด
+  h+=`<p style="font-size:12px;color:var(--muted);margin:16px 0 8px;font-weight:500">ขั้นตอนที่ใช้เวลามากที่สุด (คอขวด)</p>`;
+  const bnEntries=Object.entries(bottleneckSteps).map(([k,v])=>({step:k,avg:Math.round(v.total/v.count),max:v.max,count:v.count})).sort((a,b)=>b.avg-a.avg).slice(0,8);
+  if(bnEntries.length){
+    h+=`<div style="overflow-x:auto"><table><thead><tr><th>ขั้นตอน</th><th>เฉลี่ย (วัน)</th><th>นานสุด (วัน)</th><th>จำนวนครั้ง</th></tr></thead><tbody>`;
+    bnEntries.forEach(e=>{
+      const col=e.avg>7?'#DC2626':e.avg>3?'#E6961A':'#14938C';
+      h+=`<tr><td style="font-size:12px">${e.step}</td><td style="font-weight:600;color:${col}">${e.avg}</td><td style="color:var(--muted)">${e.max}</td><td style="color:var(--muted)">${e.count}</td></tr>`;
+    });
+    h+=`</tbody></table></div>`;
+  } else { h+=`<p style="font-size:11px;color:var(--muted)">ยังไม่มีข้อมูล</p>`; }
   h+=`</div>`;
 
-  // Bars by project
-  h+=`<div class="cd"><h3 style="font-size:12px;font-weight:600;color:#111827;margin-bottom:8px">สรุปตามโครงการ</h3>`;
+  // ============================================================
+  // กลุ่ม 2: ภาระงานปัจจุบัน
+  // ============================================================
+  h+=`<div class="cd"><h3 style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:12px">📋 ภาระงานปัจจุบัน</h3>`;
+
+  // Stat cards
+  const pendByType={};
+  pendingActs.forEach(a=>{const t=a['ประเภทกิจกรรม']||'ไม่ระบุ';pendByType[t]=(pendByType[t]||0)+1;});
+
+  h+=`<div class="sg sg3" style="margin-bottom:14px">
+    <div class="st"><div class="lb">งานค้างทั้งหมด</div><div class="vl" style="color:#E6961A">${pendingActs.length}</div></div>
+    <div class="st"><div class="lb">เกินกำหนดแล้ว</div><div class="vl" style="color:#DC2626">${overdueActs.length}</div></div>
+    <div class="st"><div class="lb">ยังไม่เกินกำหนด</div><div class="vl" style="color:#14938C">${pendingActs.length-overdueActs.length}</div></div>
+  </div>`;
+
+  // งานค้างแยกประเภท
+  h+=`<p style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">งานค้างแยกตามประเภท</p>`;
+  const pendTEntries=Object.entries(pendByType).sort((a,b)=>b[1]-a[1]);
+  const maxPend=Math.max(...pendTEntries.map(e=>e[1]),1);
+  pendTEntries.forEach(([k,v])=>{
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:12px">
+      <span style="min-width:160px;color:var(--text2)">${k}</span>
+      <div style="flex:1;height:16px;background:rgba(0,0,0,.04);border-radius:4px;overflow:hidden">
+        <div style="width:${v/maxPend*100}%;height:100%;background:${tc(k)};border-radius:4px;display:flex;align-items:center;padding-left:6px;font-size:10px;color:#fff;font-weight:600">${v}</div>
+      </div>
+      <span style="min-width:30px;text-align:right;color:var(--text2);font-weight:600">${v}</span>
+    </div>`;
+  });
+
+  // งานเกินกำหนด
+  if(overdueActs.length){
+    h+=`<p style="font-size:12px;color:#DC2626;margin:14px 0 8px;font-weight:600">⚠️ งานเกินกำหนด (${overdueActs.length} รายการ)</p>`;
+    h+=`<div style="overflow-x:auto"><table><thead><tr><th>โครงการ</th><th>กิจกรรม</th><th>เกินกำหนด</th><th>ขั้นตอนค้าง</th></tr></thead><tbody>`;
+    overdueActs.slice(0,10).forEach(a=>{
+      const cur=(a.steps||[]).find(s=>s['สถานะ']==='รอ');
+      h+=`<tr>
+        <td><span class="pl" onclick="openDetail('${a.id}')">${piLabel(a['รหัสโครงการ'])}</span></td>
+        <td style="font-size:11px">${a['ชื่อกิจกรรม']||''}</td>
+        <td style="color:#DC2626;font-weight:600">${a.overdueDays} วัน</td>
+        <td><span class="bdg" style="background:rgba(230,150,26,.1);color:#E6961A">${cur?cur['ชื่อขั้นตอน']:'—'}</span></td>
+      </tr>`;
+    });
+    h+=`</tbody></table></div>`;
+  }
+  h+=`</div>`;
+
+  // ============================================================
+  // กลุ่ม 3: ผลงานรวม
+  // ============================================================
+  h+=`<div class="cd"><h3 style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:12px">📊 ผลงานรวม</h3>`;
+
+  // Stat cards
+  const projCount=new Set(D.map(a=>a['รหัสโครงการ']).filter(c=>c&&c!=='งานอื่นๆ')).size;
+  h+=`<div class="sg sg4" style="margin-bottom:14px">
+    <div class="st"><div class="lb">ขั้นตอนที่เสร็จ</div><div class="vl" style="color:#14938C">${doneSteps}</div></div>
+    <div class="st"><div class="lb">กิจกรรมเสร็จสมบูรณ์</div><div class="vl" style="color:var(--teal)">${completedActs.length}</div></div>
+    <div class="st"><div class="lb">กิจกรรมทั้งหมด</div><div class="vl" style="color:var(--navy)">${D.length}</div></div>
+    <div class="st"><div class="lb">โครงการที่ดูแล</div><div class="vl" style="color:#8B5CF6">${projCount}</div></div>
+  </div>`;
+
+  // กราฟ trend รายเดือน — งานเข้ามา vs งานเสร็จ
+  h+=`<p style="font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:500">ภาพรวมรายเดือน (ปี พ.ศ. ${+ry+543})</p>`;
+  h+=`<div style="display:flex;gap:16px;margin-bottom:8px;font-size:11px">
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--orange)"></span>งานที่เข้ามา</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--emerald)"></span>งานที่เสร็จ</span>
+  </div>`;
+  const months=[];
+  for(let m=1;m<=12;m++){
+    const key=ry+'-'+(m<10?'0'+m:m);
+    months.push({month:MN[m],created:monthlyCreated[key]||0,done:monthlyDone[key]||0});
+  }
+  const maxMon=Math.max(...months.map(m=>Math.max(m.created,m.done)),1);
+  h+=`<div style="display:flex;align-items:flex-end;gap:3px;height:140px;margin-bottom:8px;padding:0 4px">`;
+  months.forEach((m,i)=>{
+    const pctC=m.created/maxMon*100;
+    const pctD=m.done/maxMon*100;
+    const isCur=(+ry===now.getFullYear()&&i+1===now.getMonth()+1);
+    h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end">
+      <div style="display:flex;gap:1px;align-items:flex-end;width:100%;justify-content:center;height:calc(100% - 16px)">
+        <div style="width:45%;max-width:18px;height:${Math.max(pctC,2)}%;background:var(--orange);border-radius:3px 3px 0 0;min-height:${m.created?'6':'2'}px;opacity:${m.created?1:.12};position:relative" title="เข้ามา ${m.created}">
+          ${m.created?`<span style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:600;color:var(--orange)">${m.created}</span>`:''}
+        </div>
+        <div style="width:45%;max-width:18px;height:${Math.max(pctD,2)}%;background:var(--emerald);border-radius:3px 3px 0 0;min-height:${m.done?'6':'2'}px;opacity:${m.done?1:.12};position:relative" title="เสร็จ ${m.done}">
+          ${m.done?`<span style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:600;color:var(--emerald)">${m.done}</span>`:''}
+        </div>
+      </div>
+      <span style="font-size:9px;color:var(--muted);${isCur?'font-weight:700;color:var(--navy)':''}">${m.month}</span>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  // สรุปเดือนที่ overload
+  const overloadMonths=months.filter(m=>m.created>0).sort((a,b)=>b.created-a.created).slice(0,3);
+  if(overloadMonths.length){
+    h+=`<div style="background:rgba(230,150,26,.06);border:1px solid rgba(230,150,26,.15);border-radius:10px;padding:10px 14px;margin-bottom:14px">
+      <p style="font-size:11px;font-weight:600;color:var(--orange);margin-bottom:4px">📈 เดือนที่งานเข้ามาเยอะสุด</p>`;
+    overloadMonths.forEach(m=>{
+      const ratio=m.done>0?Math.round(m.done/m.created*100):0;
+      h+=`<div style="font-size:12px;color:var(--text2);padding:2px 0">
+        <b>${m.month}</b> — เข้ามา <b style="color:var(--orange)">${m.created}</b> งาน / เสร็จ <b style="color:var(--emerald)">${m.done}</b> งาน
+        <span style="font-size:10px;color:var(--muted)">(อัตราเสร็จ ${ratio}%)</span>
+      </div>`;
+    });
+    h+=`</div>`;
+  }
+
+  // สรุปตามประเภท
+  h+=`<p style="font-size:12px;color:var(--muted);margin:14px 0 8px;font-weight:500">ขั้นตอนเสร็จแยกตามประเภทกิจกรรม</p>`;
+  const sortedT=Object.entries(byType).sort((a,b)=>b[1]-a[1]);
+  const maxT=Math.max(...sortedT.map(s=>s[1]),1);
+  sortedT.forEach(([k,v])=>{
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:12px">
+      <span style="min-width:160px;color:var(--text2)">${k}</span>
+      <div style="flex:1;height:16px;background:rgba(0,0,0,.04);border-radius:4px;overflow:hidden">
+        <div style="width:${v/maxT*100}%;height:100%;background:${tc(k)};border-radius:4px;display:flex;align-items:center;padding-left:6px;font-size:10px;color:#fff;font-weight:600">${v}</div>
+      </div>
+      <span style="min-width:30px;text-align:right;color:var(--text2);font-weight:600">${v}</span>
+    </div>`;
+  });
+
+  // สรุปตามโครงการ
+  h+=`<p style="font-size:12px;color:var(--muted);margin:14px 0 8px;font-weight:500">ขั้นตอนเสร็จแยกตามโครงการ</p>`;
   const sortedP=Object.entries(byProj).sort((a,b)=>b[1]-a[1]);
   const maxP=Math.max(...sortedP.map(s=>s[1]),1);
-  sortedP.forEach(([k,v])=>{h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:11px"><span style="min-width:120px;color:#94A3B8;font-family:monospace;font-size:10px">${k}</span><div style="flex:1;height:14px;background:rgba(0,0,0,.06);border-radius:4px;overflow:hidden"><div style="width:${v/maxP*100}%;height:100%;background:#00587E;border-radius:4px;display:flex;align-items:center;padding-left:4px;font-size:9px;color:#fff;font-weight:700">${v}</div></div><span style="min-width:24px;text-align:right;color:#111827">${v}</span></div>`;});
+  sortedP.forEach(([k,v])=>{
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:12px">
+      <span style="min-width:180px;color:var(--text2);font-size:11px">${k}</span>
+      <div style="flex:1;height:16px;background:rgba(0,0,0,.04);border-radius:4px;overflow:hidden">
+        <div style="width:${v/maxP*100}%;height:100%;background:var(--teal);border-radius:4px;display:flex;align-items:center;padding-left:6px;font-size:10px;color:#fff;font-weight:600">${v}</div>
+      </div>
+      <span style="min-width:30px;text-align:right;color:var(--text2);font-weight:600">${v}</span>
+    </div>`;
+  });
   h+=`</div>`;
 
   document.getElementById('pg-report').innerHTML=h;
 
   // Set year selector
-  const years=[...new Set(D.flatMap(a=>(a.steps||[]).map(s=>(s['วันที่เสร็จ']||'').substring(0,4))).filter(Boolean))].sort().reverse();
+  const allYears=[...new Set(D.flatMap(a=>{
+    const ys=[(a['สร้างเมื่อ']||'').substring(0,4)];
+    (a.steps||[]).forEach(s=>ys.push((s['วันที่เสร็จ']||'').substring(0,4)));
+    return ys;
+  }).filter(Boolean))].sort().reverse();
+  if(!allYears.length)allYears.push(curY);
   const ysel=document.getElementById('ry');
-  if(ysel)ysel.innerHTML=years.map(y=>`<option value="${y}" ${y===ry?'selected':''}>${parseInt(y)+543}</option>`).join('')||`<option value="${curY}">${parseInt(curY)+543}</option>`;
+  if(ysel)ysel.innerHTML=allYears.map(y=>`<option value="${y}" ${y===ry?'selected':''}>${parseInt(y)+543}</option>`).join('');
 }
 
 // ============================================================
