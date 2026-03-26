@@ -670,6 +670,7 @@ function renderReport(){
   </div>`;
 
   // === TAB: กิจกรรมหลัก ===
+  const avgEntries=Object.entries(avgDaysByType).map(([k,v])=>({type:k,avg:Math.round(v.total/v.count),count:v.count})).sort((a,b)=>b.avg-a.avg);
   h+=`<div id="rpt-main">`;
   h+=`<p style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">ระยะเวลาเฉลี่ยทั้งกระบวนการ ตั้งแต่รับเรื่อง → เสร็จสิ้น (วัน)</p>`;
   if(avgEntries.length){
