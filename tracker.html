@@ -11,7 +11,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans Thai','SF Pro Display',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 .hdr{background:rgba(5,48,117,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:10px 20px;position:sticky;top:0;z-index:100}
 .hdr-in{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.hdr h1{font-size:17px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.hdr h1{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.3px}
 .nav{display:flex;gap:2px;background:rgba(255,255,255,.12);border-radius:8px;padding:2px}
 .nav-b{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:500;background:transparent;color:rgba(255,255,255,.55);transition:.15s}
 .nav-b.on{background:rgba(255,255,255,.2);color:#fff}
@@ -95,7 +95,12 @@ tr:hover{background:rgba(0,88,126,.04)}
 </head>
 <body>
 <div class="hdr"><div class="hdr-in">
-  <div><h1>📋 Workflow Tracker</h1><span style="font-size:11px;color:rgba(255,255,255,.5)">ต๊ะ — บพค.</span></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div>
+      <h1>ระบบติดตามการทำงาน (Workflow Tracker System)</h1>
+      <span style="font-size:10px;color:rgba(255,255,255,.5)">ผู้ทำรายการ : นายจักรพันธ์ สาครชัยเจริญ</span>
+    </div>
+  </div>
   <div class="nav">
     <button class="nav-b on" data-p="dash">Dashboard</button>
     <button class="nav-b" data-p="list">กิจกรรม</button>
@@ -283,7 +288,7 @@ function renderListBody(){
   });
 
   document.getElementById('listCount').textContent=`แสดง ${fd.length} จาก ${D.length}`;
-  document.getElementById('listHead').innerHTML=`<tr><th></th><th>วันที่สร้าง</th><th>โครงการ</th><th>ประเภท</th><th>กิจกรรม</th><th>progress</th><th>deadline</th><th></th></tr>`;
+  document.getElementById('listHead').innerHTML=`<tr><th></th><th>วันที่สร้าง</th><th>กิจกรรม</th><th>ประเภท</th><th>โครงการ</th><th>progress</th><th>deadline</th><th></th></tr>`;
 
   const now=new Date();
   let rows='';
@@ -299,9 +304,9 @@ function renderListBody(){
     rows+=`<tr>
       <td style="white-space:nowrap"><button class="b bs" style="background:var(--teal);color:#fff" onclick="openDetail('${a.id}')">📋 ดู</button> <button class="b bs" style="background:#FEE2E2;color:#DC2626;border:1px solid #FECACA" onclick="confirmDel('${a.id}','${(a['ชื่อกิจกรรม']||'').substring(0,20).replace(/'/g,"\\'")}')">🗑️</button></td>
       <td style="font-size:10px;white-space:nowrap;color:var(--muted)">${fmtD(a['สร้างเมื่อ'])}</td>
-      <td><span class="pl" onclick="openProjectLog('${a['รหัสโครงการ']}')">${piLabel(a['รหัสโครงการ'])}</span></td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a['ชื่อกิจกรรม']||''}">${a['ชื่อกิจกรรม']||'-'}</td>
       <td><span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span></td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a['ชื่อกิจกรรม']||''}">${a['ชื่อกิจกรรม']||'-'}</td>
+      <td><span class="pl" onclick="openProjectLog('${a['รหัสโครงการ']}')">${piLabel(a['รหัสโครงการ'])}</span></td>
       <td style="min-width:100px"><div class="prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span class="prog-txt">${ds}/${ts}</span></div></td>
       <td class="${dlCls}" style="font-size:10px;white-space:nowrap">${fmtD(a.deadline)}</td>
       <td><span class="bdg" style="background:${allDone?'rgba(20,147,140,.1)':'rgba(230,150,26,.1)'};color:${allDone?'#14938C':'#E6961A'}">${allDone?'เสร็จสิ้น':'ดำเนินการ'}</span></td>
@@ -332,20 +337,20 @@ function renderDetail(a){
 
   // Header card
   h+=`<div class="cd" style="padding:16px">
+    ${a['ชื่อโครงการ']?`<p style="font-size:13px;font-weight:500;color:var(--navy);margin-bottom:6px;line-height:1.5">${a['ชื่อโครงการ']}</p>`:''}
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
       <div>
         <span class="pl" style="font-size:11px">${piLabel(a['รหัสโครงการ'])}</span>
         <h2 style="font-size:16px;font-weight:700;margin:2px 0">${a['ชื่อกิจกรรม']||a['ประเภทกิจกรรม']||''}</h2>
         <span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span>
-        ${a['ชื่อโครงการ']?`<p style="font-size:10px;color:#94A3B8;margin-top:4px">${a['ชื่อโครงการ']}</p>`:''}
       </div>
       <div style="text-align:right">
-        ${a.deadline?`<p style="font-size:10px;color:rgba(255,255,255,.55)">deadline</p><p style="font-size:13px;font-weight:600;color:${allDone?'#14938C':'#E6961A'}">${fmtD(a.deadline)}</p>`:''}
+        ${a.deadline?`<p style="font-size:10px;color:var(--muted)">deadline</p><p style="font-size:13px;font-weight:600;color:${allDone?'#14938C':'#E6961A'}">${fmtD(a.deadline)}</p>`:''}
         <span class="bdg" style="margin-top:4px;background:${allDone?'rgba(20,147,140,.1)':'rgba(230,150,26,.1)'};color:${allDone?'#14938C':'#E6961A'}">${allDone?'✅ เสร็จทั้งหมด':'กำลังดำเนินการ'}</span>
       </div>
     </div>
     <div style="margin-top:10px">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#94A3B8;margin-bottom:3px"><span>ความคืบหน้า</span><span>${ds}/${ts} (${pct}%)</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px"><span>ความคืบหน้า</span><span>${ds}/${ts} (${pct}%)</span></div>
       <div style="height:8px;background:rgba(0,0,0,.06);border-radius:4px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${allDone?'#14938C':'#00587E'};border-radius:4px;transition:.3s"></div></div>
     </div>
   </div>`;
