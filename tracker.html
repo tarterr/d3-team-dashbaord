@@ -104,7 +104,9 @@ tr:hover{background:rgba(0,88,126,.04)}
   <div class="nav">
     <button class="nav-b on" data-p="dash">Dashboard</button>
     <button class="nav-b" data-p="list">กิจกรรม</button>
+    <button class="nav-b" data-p="done">เสร็จสิ้น</button>
     <button class="nav-b" data-p="report">รายงาน</button>
+    <button class="nav-b" data-p="sop">จัดการ SOP</button>
   </div>
   <div style="display:flex;gap:4px;align-items:center">
     <span id="sync" style="font-size:9px;color:rgba(255,255,255,.5)"></span>
@@ -116,15 +118,17 @@ tr:hover{background:rgba(0,88,126,.04)}
 <div class="ct">
   <div id="pg-dash" class="pg on"></div>
   <div id="pg-list" class="pg"></div>
+  <div id="pg-done" class="pg"></div>
   <div id="pg-detail" class="pg"></div>
   <div id="pg-log" class="pg"></div>
   <div id="pg-report" class="pg"></div>
+  <div id="pg-sop" class="pg"></div>
 </div>
 <div id="modal"></div>
 <div id="toasts"></div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbyRxK9dBVcSgyjTR6f5KegtbOq9d5WOte_9plH_cHYPjgIHgoWhi4HsRWWEE6ky3FhV/exec';
+const API='https://script.google.com/macros/s/AKfycbzm5bsZeEjarbK4cF0fI373oVqQLiMvR_a3FZLaCbjQAM1Bau4Bg6x8kMGLZTXCcv0P/exec';
 let D=[],P=[],T={},TK=[];
 const SC={'เสร็จ':'#14938C','รอ':'#7A9BBF','ข้าม':'#475569'};
 const TC={'การทำสัญญา':'#00587E','เบิกจ่ายเงินงวด':'#E6961A','ส่งผู้ทรงประเมินรายงาน':'#8B5CF6','เบิกเงินงวดสุดท้าย':'#EC4899','แจ้งคืนเงินคงเหลือ':'#06B6D4','อนุมัติปิดโครงการ':'#64748B','จัดทำหนังสือรับรอง':'#10B981','ขออนุมัติขยายเวลา':'#EF4444','ขออนุมัติเปลี่ยนงบ':'#D946EF','งานอื่นๆ':'#94A3B8'};
@@ -161,7 +165,7 @@ async function load(){
     if(a.success)D=a.data;
     if(p.success)P=p.data;
     if(t.success){T=t.templates;TK=t.types;}
-    renderDash();renderList();renderReport();
+    renderDash();renderList();renderDone();renderReport();renderSOP();
     document.getElementById('sync').textContent=new Date().toLocaleTimeString('th-TH');
   }catch(e){console.error(e);toast('โหลดข้อมูลไม่สำเร็จ','err');}
 }
@@ -258,7 +262,13 @@ function initListToolbar(){
       <input class="sb" id="lsearch" placeholder="🔍 ค้นหา..." oninput="renderListBody()">
       <select class="fs" id="lproj" onchange="renderListBody()"><option value="">ทุกโครงการ</option>${P.map(p=>`<option value="${p.code}">${piLabel(p.code)}</option>`).join('')}<option value="งานอื่นๆ">งานอื่นๆ</option></select>
       <select class="fs" id="ltype" onchange="renderListBody()"><option value="">ทุกประเภท</option>${TK.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
-      <select class="fs" id="lstatus" onchange="renderListBody()"><option value="">ทุกสถานะ</option><option value="active">กำลังดำเนินการ</option><option value="done">เสร็จสิ้น</option></select>
+    </div>
+    <div class="tb" style="margin-top:-8px">
+      <label style="font-size:10px;color:var(--muted)">ช่วงวันที่สร้าง:</label>
+      <input class="fi" type="date" id="ldfrom" onchange="renderListBody()" style="width:140px;padding:5px 8px;font-size:10px">
+      <span style="font-size:10px;color:var(--muted)">ถึง</span>
+      <input class="fi" type="date" id="ldto" onchange="renderListBody()" style="width:140px;padding:5px 8px;font-size:10px">
+      <button class="b bs" style="background:#F3F4F6;color:var(--text2);border:1px solid #D1D5DB" onclick="document.getElementById('ldfrom').value='';document.getElementById('ldto').value='';renderListBody()">ล้าง</button>
     </div>
     <div class="cd" style="padding:0">
       <div style="padding:8px 14px;border-bottom:1px solid #F3F4F6;font-size:11px;color:#94A3B8" id="listCount"></div>
@@ -273,21 +283,30 @@ function renderListBody(){
   const sq=(document.getElementById('lsearch')||{}).value||'';
   const fp=(document.getElementById('lproj')||{}).value||'';
   const ft=(document.getElementById('ltype')||{}).value||'';
-  const fst=(document.getElementById('lstatus')||{}).value||'';
+  const dfrom=(document.getElementById('ldfrom')||{}).value||'';
+  const dto=(document.getElementById('ldto')||{}).value||'';
 
   let fd=D.filter(a=>{
+    // แสดงเฉพาะงานที่ยังไม่เสร็จ
+    const steps=a.steps||[];
+    const allDone=steps.length>0&&steps.filter(s=>s['สถานะ']==='เสร็จ').length===steps.length;
+    if(allDone)return false;
     if(fp==='งานอื่นๆ'&&a['รหัสโครงการ']!=='งานอื่นๆ')return false;
     if(fp&&fp!=='งานอื่นๆ'&&a['รหัสโครงการ']!==fp)return false;
     if(ft&&a['ประเภทกิจกรรม']!==ft)return false;
-    const steps=a.steps||[];
-    const allDone=steps.length>0&&steps.filter(s=>s['สถานะ']==='เสร็จ').length===steps.length;
-    if(fst==='done'&&!allDone)return false;
-    if(fst==='active'&&allDone)return false;
+    // Filter ตามช่วงวันที่สร้าง
+    if(dfrom||dto){
+      const cd=String(a['สร้างเมื่อ']||'').substring(0,10);
+      if(!cd)return false;
+      if(dfrom&&cd<dfrom)return false;
+      if(dto&&cd>dto)return false;
+    }
     if(sq){const hay=[a['ชื่อกิจกรรม'],a['รหัสโครงการ'],a['ชื่อโครงการ'],a['ประเภทกิจกรรม'],a['หมายเหตุ'],piLabel(a['รหัสโครงการ'])].join(' ').toLowerCase();if(!hay.includes(sq.toLowerCase()))return false;}
     return true;
   });
 
-  document.getElementById('listCount').textContent=`แสดง ${fd.length} จาก ${D.length}`;
+  const activeCount=D.filter(a=>{const s=a.steps||[];return!(s.length>0&&s.filter(x=>x['สถานะ']==='เสร็จ').length===s.length);}).length;
+  document.getElementById('listCount').textContent=`แสดง ${fd.length} จาก ${activeCount} กิจกรรมที่กำลังดำเนินการ`;
   document.getElementById('listHead').innerHTML=`<tr><th></th><th>วันที่สร้าง</th><th>กิจกรรม</th><th>ประเภท</th><th>โครงการ</th><th>progress</th><th>deadline</th><th></th></tr>`;
 
   const now=new Date();
@@ -948,6 +967,155 @@ function openProjectLog(code){
 }
 
 // ============================================================
+// ============================================================
+// DONE LIST — กิจกรรมที่เสร็จสิ้นแล้ว
+// ============================================================
+function renderDone(){
+  let h=`<div class="tb">
+    <input class="sb" id="dsearch" placeholder="🔍 ค้นหากิจกรรมที่เสร็จแล้ว..." oninput="renderDoneBody()">
+    <select class="fs" id="dtype" onchange="renderDoneBody()"><option value="">ทุกประเภท</option>${TK.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
+  </div>
+  <div class="cd" style="padding:0">
+    <div style="padding:8px 14px;border-bottom:1px solid #F3F4F6;font-size:11px;color:#94A3B8" id="doneCount"></div>
+    <div class="tw"><table><thead id="doneHead"></thead><tbody id="doneBody"></tbody></table></div>
+  </div>`;
+  document.getElementById('pg-done').innerHTML=h;
+  renderDoneBody();
+}
+
+function renderDoneBody(){
+  const sq=(document.getElementById('dsearch')||{}).value||'';
+  const ft=(document.getElementById('dtype')||{}).value||'';
+  let fd=D.filter(a=>{
+    const steps=a.steps||[];
+    const allDone=steps.length>0&&steps.filter(s=>s['สถานะ']==='เสร็จ').length===steps.length;
+    if(!allDone)return false;
+    if(ft&&a['ประเภทกิจกรรม']!==ft)return false;
+    if(sq){const hay=[a['ชื่อกิจกรรม'],a['รหัสโครงการ'],a['ชื่อโครงการ'],a['ประเภทกิจกรรม'],piLabel(a['รหัสโครงการ'])].join(' ').toLowerCase();if(!hay.includes(sq.toLowerCase()))return false;}
+    return true;
+  });
+  const totalDone=D.filter(a=>{const s=a.steps||[];return s.length>0&&s.filter(x=>x['สถานะ']==='เสร็จ').length===s.length;}).length;
+  document.getElementById('doneCount').textContent=`แสดง ${fd.length} จาก ${totalDone} กิจกรรมที่เสร็จสิ้น`;
+  document.getElementById('doneHead').innerHTML=`<tr><th></th><th>วันที่สร้าง</th><th>กิจกรรม</th><th>ประเภท</th><th>โครงการ</th><th>ขั้นตอน</th></tr>`;
+  let rows='';
+  fd.forEach(a=>{
+    const steps=a.steps||[];
+    const lastDone=steps.filter(s=>s['วันที่เสร็จ']).map(s=>s['วันที่เสร็จ']).sort().pop();
+    rows+=`<tr>
+      <td><button class="b bs" style="background:var(--teal);color:#fff" onclick="openDetail('${a.id}')">📋 ดู</button></td>
+      <td style="font-size:10px;white-space:nowrap;color:var(--muted)">${fmtD(a['สร้างเมื่อ'])}</td>
+      <td style="font-size:12px">${a['ชื่อกิจกรรม']||'-'}</td>
+      <td><span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span></td>
+      <td><span class="pl" onclick="openProjectLog('${a['รหัสโครงการ']}')">${piLabel(a['รหัสโครงการ'])}</span></td>
+      <td><span class="bdg" style="background:rgba(20,147,140,.1);color:#14938C">✅ ${steps.length}/${steps.length}</span></td>
+    </tr>`;
+  });
+  document.getElementById('doneBody').innerHTML=rows||'<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748B">ยังไม่มีกิจกรรมที่เสร็จสิ้น</td></tr>';
+}
+
+// ============================================================
+// SOP MANAGEMENT — จัดการ SOP Template จากหน้าเว็บ
+// ============================================================
+function renderSOP(){
+  let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div>
+      <h3 style="font-size:14px;font-weight:600;color:var(--navy)">จัดการ SOP Template</h3>
+      <p style="font-size:11px;color:var(--muted)">เพิ่ม แก้ไข ลบ ขั้นตอน SOP แต่ละประเภทกิจกรรม (บันทึกลง Google Sheets อัตโนมัติ)</p>
+    </div>
+    <button class="b bs" style="background:var(--teal);color:#fff" onclick="openAddSopType()">+ เพิ่มประเภทใหม่</button>
+  </div>`;
+
+  TK.forEach(type=>{
+    const steps=T[type]||[];
+    h+=`<div class="cd">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h4 style="font-size:13px;font-weight:600;color:var(--navy)">${type} <span style="font-size:11px;color:var(--muted);font-weight:400">(${steps.length} ขั้นตอน)</span></h4>
+        <button class="b bs" style="background:var(--emerald);color:#fff" onclick="openAddSopStep('${type}')">+ เพิ่มขั้นตอน</button>
+      </div>
+      <div style="overflow-x:auto"><table><thead><tr><th>ลำดับ</th><th>ชื่อขั้นตอน</th><th></th></tr></thead><tbody>`;
+    steps.forEach((s,i)=>{
+      h+=`<tr>
+        <td style="font-weight:600;color:var(--teal);width:50px">${s.order}</td>
+        <td style="font-size:12px">${s.name}</td>
+        <td style="white-space:nowrap;text-align:right">
+          <button class="b bs" style="background:var(--navy);color:#fff" onclick="openEditSopStep('${type}',${i})">แก้ไข</button>
+          <button class="b bs" style="background:#FEE2E2;color:#DC2626;border:1px solid #FECACA" onclick="deleteSopStep('${type}',${s.order})">ลบ</button>
+        </td>
+      </tr>`;
+    });
+    h+=`</tbody></table></div></div>`;
+  });
+
+  document.getElementById('pg-sop').innerHTML=h;
+}
+
+function openAddSopType(){
+  document.getElementById('modal').innerHTML=`<div class="mo" onclick="if(event.target===this)closeM()"><div class="md" style="max-width:400px">
+    <div class="md-h"><h2>เพิ่มประเภทกิจกรรมใหม่</h2><button class="b bs" style="background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB" onclick="closeM()">✕</button></div>
+    <div class="md-b">
+      <div class="fgi"><label class="fgl">ชื่อประเภท</label><input class="fi" id="sop_newtype" placeholder="เช่น ส่งรายงานความก้าวหน้า"></div>
+      <div class="fgi" style="margin-top:10px"><label class="fgl">ขั้นตอนแรก</label><input class="fi" id="sop_firststep" value="รับเรื่องมาดำเนินการ"></div>
+    </div>
+    <div class="md-f"><button class="b" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB" onclick="closeM()">ยกเลิก</button><button class="b" style="background:var(--teal);color:#fff" onclick="saveNewSopType()">💾 สร้าง</button></div>
+  </div></div>`;
+}
+
+async function saveNewSopType(){
+  const type=document.getElementById('sop_newtype').value.trim();
+  const step=document.getElementById('sop_firststep').value.trim()||'รับเรื่องมาดำเนินการ';
+  if(!type){toast('กรุณากรอกชื่อประเภท','err');return;}
+  await api({action:'addSopStep',data:JSON.stringify({type,order:1,name:step})});
+  toast('เพิ่มประเภทสำเร็จ','ok');closeM();await load();renderSOP();
+}
+
+function openAddSopStep(type){
+  const steps=T[type]||[];
+  const nextOrder=steps.length?Math.max(...steps.map(s=>s.order))+1:1;
+  document.getElementById('modal').innerHTML=`<div class="mo" onclick="if(event.target===this)closeM()"><div class="md" style="max-width:400px">
+    <div class="md-h"><h2>เพิ่มขั้นตอน — ${type}</h2><button class="b bs" style="background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB" onclick="closeM()">✕</button></div>
+    <div class="md-b">
+      <div class="fgi"><label class="fgl">ลำดับ</label><input class="fi" type="number" id="sop_order" value="${nextOrder}"></div>
+      <div class="fgi" style="margin-top:10px"><label class="fgl">ชื่อขั้นตอน</label><input class="fi" id="sop_name" placeholder="เช่น ส่งอีเมลแจ้งนักวิจัย"></div>
+    </div>
+    <div class="md-f"><button class="b" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB" onclick="closeM()">ยกเลิก</button><button class="b" style="background:var(--teal);color:#fff" onclick="saveSopStep('${type}')">💾 เพิ่ม</button></div>
+  </div></div>`;
+}
+
+async function saveSopStep(type){
+  const order=parseInt(document.getElementById('sop_order').value);
+  const name=document.getElementById('sop_name').value.trim();
+  if(!name){toast('กรุณากรอกชื่อขั้นตอน','err');return;}
+  await api({action:'addSopStep',data:JSON.stringify({type,order,name})});
+  toast('เพิ่มขั้นตอนสำเร็จ','ok');closeM();await load();renderSOP();
+}
+
+function openEditSopStep(type,idx){
+  const s=(T[type]||[])[idx];
+  if(!s)return;
+  document.getElementById('modal').innerHTML=`<div class="mo" onclick="if(event.target===this)closeM()"><div class="md" style="max-width:400px">
+    <div class="md-h"><h2>แก้ไขขั้นตอน — ${type}</h2><button class="b bs" style="background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB" onclick="closeM()">✕</button></div>
+    <div class="md-b">
+      <div class="fgi"><label class="fgl">ลำดับ</label><input class="fi" type="number" id="sop_eorder" value="${s.order}"></div>
+      <div class="fgi" style="margin-top:10px"><label class="fgl">ชื่อขั้นตอน</label><input class="fi" id="sop_ename" value="${s.name}"></div>
+    </div>
+    <div class="md-f"><button class="b" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB" onclick="closeM()">ยกเลิก</button><button class="b" style="background:var(--teal);color:#fff" onclick="updateSopStep('${type}',${s.order})">💾 บันทึก</button></div>
+  </div></div>`;
+}
+
+async function updateSopStep(type,oldOrder){
+  const newOrder=parseInt(document.getElementById('sop_eorder').value);
+  const name=document.getElementById('sop_ename').value.trim();
+  if(!name){toast('กรุณากรอกชื่อขั้นตอน','err');return;}
+  await api({action:'updateSopStep',data:JSON.stringify({type,oldOrder,newOrder,name})});
+  toast('แก้ไขสำเร็จ','ok');closeM();await load();renderSOP();
+}
+
+async function deleteSopStep(type,order){
+  if(!confirm(`ลบขั้นตอนลำดับที่ ${order} ของ "${type}"?`))return;
+  await api({action:'deleteSopStep',data:JSON.stringify({type,order})});
+  toast('ลบสำเร็จ','ok');await load();renderSOP();
+}
+
 // HELPERS
 // ============================================================
 function fmtD(d){if(!d)return'—';const p=String(d).substring(0,10).split('-');if(p.length!==3)return d;const M=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return`${+p[2]} ${M[+p[1]]} ${+p[0]+543}`;}
