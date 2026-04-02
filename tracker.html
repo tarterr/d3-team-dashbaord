@@ -581,10 +581,17 @@ function renderReport(){
       <option value="01">ม.ค.</option><option value="02">ก.พ.</option><option value="03">มี.ค.</option><option value="04">เม.ย.</option><option value="05">พ.ค.</option><option value="06">มิ.ย.</option>
       <option value="07">ก.ค.</option><option value="08">ส.ค.</option><option value="09">ก.ย.</option><option value="10">ต.ค.</option><option value="11">พ.ย.</option><option value="12">ธ.ค.</option>
     </select>
+    <label style="font-size:10px;color:var(--muted);margin-left:8px">ช่วงวันที่:</label>
+    <input class="fi" type="date" id="rdfrom" onchange="renderReport()" style="width:140px;padding:5px 8px;font-size:10px">
+    <span style="font-size:10px;color:var(--muted)">ถึง</span>
+    <input class="fi" type="date" id="rdto" onchange="renderReport()" style="width:140px;padding:5px 8px;font-size:10px">
+    <button class="b bs" style="background:#F3F4F6;color:var(--text2);border:1px solid #D1D5DB" onclick="document.getElementById('rdfrom').value='';document.getElementById('rdto').value='';renderReport()">ล้าง</button>
   </div>`;
 
   const ry=(document.getElementById('ry')||{}).value||curY;
   const rm=(document.getElementById('rm')||{}).value||'';
+  const rdfrom=(document.getElementById('rdfrom')||{}).value||'';
+  const rdto=(document.getElementById('rdto')||{}).value||'';
 
   // ============================================================
   // คำนวณข้อมูลทั้งหมด
@@ -618,9 +625,15 @@ function renderReport(){
       const lastDone=steps.filter(s=>s['วันที่เสร็จ']).map(s=>s['วันที่เสร็จ']).sort().pop();
       if(lastDone){
         const ym=lastDone.substring(0,7);
-        if(!ry||lastDone.startsWith(ry)){
-          if(!rm||lastDone.substring(5,7)===rm) completedActs.push(a);
+        let matchDate=true;
+        if(rdfrom||rdto){
+          if(rdfrom&&lastDone<rdfrom)matchDate=false;
+          if(rdto&&lastDone>rdto)matchDate=false;
+        } else {
+          if(ry&&!lastDone.startsWith(ry))matchDate=false;
+          if(rm&&lastDone.substring(5,7)!==rm)matchDate=false;
         }
+        if(matchDate) completedActs.push(a);
         if(lastDone.startsWith(ry)){
           monthlyDone[ym]=(monthlyDone[ym]||0)+1;
         }
@@ -663,8 +676,13 @@ function renderReport(){
     steps.forEach(s=>{
       const d=s['วันที่เสร็จ']||'';
       if(!d||s['สถานะ']!=='เสร็จ')return;
-      if(ry&&!d.startsWith(ry))return;
-      if(rm&&d.substring(5,7)!==rm)return;
+      if(!rdfrom&&!rdto){
+        if(ry&&!d.startsWith(ry))return;
+        if(rm&&d.substring(5,7)!==rm)return;
+      } else {
+        if(rdfrom&&d<rdfrom)return;
+        if(rdto&&d>rdto)return;
+      }
       doneSteps++;
       byType[type]=(byType[type]||0)+1;
       byProj[piLabel(a['รหัสโครงการ'])]=(byProj[piLabel(a['รหัสโครงการ'])]||0)+1;
