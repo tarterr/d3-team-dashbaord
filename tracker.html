@@ -128,7 +128,7 @@ tr:hover{background:rgba(0,88,126,.04)}
 <div id="toasts"></div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbzm5bsZeEjarbK4cF0fI373oVqQLiMvR_a3FZLaCbjQAM1Bau4Bg6x8kMGLZTXCcv0P/exec';
+const API='https://script.google.com/macros/s/AKfycbyE59TnquLWcUKddgVQeTcivxMJ-P-SWBHOU4CtepZReTQcSkRwXzV_WyBqmP4vC_Jf/exec';
 let D=[],P=[],T={},TK=[];
 const SC={'เสร็จ':'#14938C','รอ':'#7A9BBF','ข้าม':'#475569'};
 const TC={'การทำสัญญา':'#00587E','เบิกจ่ายเงินงวด':'#E6961A','ส่งผู้ทรงประเมินรายงาน':'#8B5CF6','เบิกเงินงวดสุดท้าย':'#EC4899','แจ้งคืนเงินคงเหลือ':'#06B6D4','อนุมัติปิดโครงการ':'#64748B','จัดทำหนังสือรับรอง':'#10B981','ขออนุมัติขยายเวลา':'#EF4444','ขออนุมัติเปลี่ยนงบ':'#D946EF','งานอื่นๆ':'#94A3B8'};
@@ -186,48 +186,95 @@ function renderDash(){
     const allDone=totalSteps>0&&doneSteps===totalSteps;
     if(allDone)done++;else active++;
 
-    // Find current step (first non-done, non-skip)
+    // Find current step
     const cur=steps.find(s=>s['สถานะ']==='รอ');
     if(cur&&!allDone){
       nextActions.push({act:a,step:cur,doneSteps,totalSteps});
     }
 
-    // Check deadline - activity level
-    if(a.deadline&&!allDone){
-      const dl=new Date(a.deadline);
-      const diff=Math.ceil((dl-now)/(864e5));
-      if(diff<0){worDL++;alerts.push({a,step:cur,diff,over:true});}
-      else if(diff<=7){nearDL++;alerts.push({a,step:cur,diff,over:false});}
-    }
-    // Check step-level deadlines
-    if(cur&&cur.deadline&&!allDone){
-      const dl2=new Date(cur.deadline);
-      const diff2=Math.ceil((dl2-now)/(864e5));
-      if(diff2<0&&!alerts.find(x=>x.a.id===a.id)){alerts.push({a,step:cur,diff:diff2,over:true,stepLevel:true});worDL++;}
-      else if(diff2<=7&&diff2>=0&&!alerts.find(x=>x.a.id===a.id)){alerts.push({a,step:cur,diff:diff2,over:false,stepLevel:true});nearDL++;}
+    // Check ALL step-level deadlines (not just current)
+    if(!allDone){
+      steps.forEach(s=>{
+        if(s['สถานะ']==='เสร็จ'||s['สถานะ']==='ข้าม')return;
+        if(!s.deadline)return;
+        const dl=new Date(s.deadline);
+        const diff=Math.ceil((dl-now)/(864e5));
+        if(diff<0){worDL++;alerts.push({a,step:s,diff,over:true,stepLevel:true});}
+        else if(diff<=14){nearDL++;alerts.push({a,step:s,diff,over:false,stepLevel:true});}
+      });
+      // Also check activity-level deadline
+      if(a.deadline){
+        const dl=new Date(a.deadline);
+        const diff=Math.ceil((dl-now)/(864e5));
+        if(diff<0&&!alerts.find(x=>x.a.id===a.id&&!x.stepLevel)){alerts.push({a,step:cur,diff,over:true,stepLevel:false});worDL++;}
+        else if(diff<=14&&diff>=0&&!alerts.find(x=>x.a.id===a.id&&!x.stepLevel)){alerts.push({a,step:cur,diff,over:false,stepLevel:false});nearDL++;}
+      }
     }
   });
 
   alerts.sort((a,b)=>a.diff-b.diff);
 
+  const overdue=alerts.filter(x=>x.over);
+  const near7=alerts.filter(x=>!x.over&&x.diff<=7);
+  const near14=alerts.filter(x=>!x.over&&x.diff>7&&x.diff<=14);
+
   let h=`<div class="sg sg4">
     <div class="st"><div class="lb">กิจกรรมทั้งหมด</div><div class="vl" style="color:#00587E">${total}</div></div>
     <div class="st"><div class="lb">กำลังดำเนินการ</div><div class="vl" style="color:#E6961A">${active}</div></div>
-    <div class="st"><div class="lb">ใกล้ครบ/เลยกำหนด</div><div class="vl" style="color:#DC2626">${nearDL+worDL}</div></div>
-    <div class="st"><div class="lb">เสร็จสิ้น</div><div class="vl" style="color:#22C55E">${done}</div></div>
+    <div class="st"><div class="lb">ใกล้ครบ/เลยกำหนด</div><div class="vl" style="color:#DC2626">${alerts.length}</div></div>
+    <div class="st"><div class="lb">เสร็จสิ้น</div><div class="vl" style="color:#14938C">${done}</div></div>
   </div>`;
 
-  // Alerts
+  // Alerts with filter
+  h+=`<div class="cd">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+      <h4 style="font-size:13px;font-weight:600;color:var(--navy)">⚠️ แจ้งเตือนวันที่กำหนดเสร็จ <span class="bdg" style="background:rgba(220,38,38,.1);color:#DC2626">${alerts.length}</span></h4>
+    </div>`;
+
+  // Filter tabs
+  h+=`<div style="display:flex;gap:2px;background:#F3F4F6;border-radius:8px;padding:2px;margin-bottom:10px;width:fit-content;flex-wrap:wrap" id="dlTabs">
+    <button class="b bs dl-tab dl-tab-on" data-f="all" onclick="filterAlerts('all')" style="background:var(--teal);color:#fff">ทั้งหมด (${alerts.length})</button>
+    <button class="b bs dl-tab" data-f="over" onclick="filterAlerts('over')" style="background:transparent;color:var(--text2)">เลยกำหนด (${overdue.length})</button>
+    <button class="b bs dl-tab" data-f="near7" onclick="filterAlerts('near7')" style="background:transparent;color:var(--text2)">ใกล้ครบ 7 วัน (${near7.length})</button>
+    <button class="b bs dl-tab" data-f="near14" onclick="filterAlerts('near14')" style="background:transparent;color:var(--text2)">ใกล้ครบ 14 วัน (${near14.length})</button>
+  </div>`;
+
+  // Search + filter
+  h+=`<div class="tb" style="margin-bottom:10px">
+    <input class="sb" id="dlSearch" placeholder="🔍 ค้นหา รหัส / ชื่อหัวหน้า / กิจกรรม..." oninput="filterAlerts()" style="max-width:300px">
+    <select class="fs" id="dlProj" onchange="filterAlerts()"><option value="">ทุกโครงการ</option>${P.map(p=>`<option value="${p.code}">${piLabel(p.code)}</option>`).join('')}</select>
+    <select class="fs" id="dlType" onchange="filterAlerts()"><option value="">ทุกประเภท</option>${TK.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
+  </div>`;
+
+  // Alert items
   if(alerts.length){
-    h+=`<div class="alb"><h4>⚠️ แจ้งเตือน deadline (${alerts.length} รายการ)</h4>`;
-    alerts.forEach(x=>{
-      const label=x.over?`<span style="color:#DC2626;font-weight:700">เลยกำหนด ${Math.abs(x.diff)} วัน</span>`:`<span style="color:#E6961A;font-weight:600">เหลือ ${x.diff} วัน</span>`;
-      h+=`<div class="ali"><span class="pl" onclick="openDetail('${x.a.id}')">${piLabel(x.a['รหัสโครงการ'])}</span> ${x.a['ชื่อกิจกรรม']||''} → <b>${x.step?x.step['ชื่อขั้นตอน']:'—'}</b> ${label}</div>`;
+    h+=`<div id="dlList">`;
+    alerts.forEach((x,idx)=>{
+      const label=x.over?`<span class="bdg" style="background:rgba(220,38,38,.1);color:#DC2626">เลยกำหนด ${Math.abs(x.diff)} วัน</span>`
+        :x.diff<=7?`<span class="bdg" style="background:rgba(230,150,26,.1);color:#E6961A">เหลือ ${x.diff} วัน</span>`
+        :`<span class="bdg" style="background:rgba(0,88,126,.1);color:#00587E">เหลือ ${x.diff} วัน</span>`;
+      const bgCol=x.over?'rgba(220,38,38,.04)':x.diff<=7?'rgba(230,150,26,.04)':'transparent';
+      h+=`<div class="dl-item" data-proj="${x.a['รหัสโครงการ']||''}" data-type="${x.a['ประเภทกิจกรรม']||''}" data-over="${x.over?1:0}" data-diff="${x.diff}" data-hay="${[x.a['รหัสโครงการ'],x.a['ชื่อกิจกรรม'],x.a['ประเภทกิจกรรม'],piLabel(x.a['รหัสโครงการ']),x.step?x.step['ชื่อขั้นตอน']:''].join(' ').toLowerCase()}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:${bgCol};border-bottom:1px solid #F3F4F6;font-size:12px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:2px">
+            <span class="pl" onclick="openDetail('${x.a.id}')">${piLabel(x.a['รหัสโครงการ'])}</span>
+          </div>
+          <p style="margin:0;color:var(--text2)">${x.a['ชื่อกิจกรรม']||x.a['ประเภทกิจกรรม']||''}</p>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--muted)">ขั้นตอนค้าง:</span>
+            <span class="bdg" style="background:rgba(230,150,26,.1);color:#E6961A">${x.step?x.step['ชื่อขั้นตอน']:'—'}</span>
+            ${label}
+            ${x.step&&x.step.deadline?`<span style="font-size:10px;color:var(--muted)">กำหนด: ${fmtD(x.step.deadline)}</span>`:''}
+          </div>
+        </div>
+        <button class="b bs" style="background:var(--teal);color:#fff;flex-shrink:0" onclick="openDetail('${x.a.id}')">ดู</button>
+      </div>`;
     });
     h+=`</div>`;
   }else{
-    h+=`<div class="cd" style="text-align:center;color:#22C55E;font-size:11px;padding:10px">✅ ไม่มีงานใกล้ครบกำหนด</div>`;
+    h+=`<div style="text-align:center;color:#14938C;font-size:12px;padding:14px">✅ ไม่มีงานใกล้ครบกำหนด</div>`;
   }
+  h+=`</div>`;
 
   // Next actions
   if(nextActions.length){
@@ -307,7 +354,7 @@ function renderListBody(){
 
   const activeCount=D.filter(a=>{const s=a.steps||[];return!(s.length>0&&s.filter(x=>x['สถานะ']==='เสร็จ').length===s.length);}).length;
   document.getElementById('listCount').textContent=`แสดง ${fd.length} จาก ${activeCount} กิจกรรมที่กำลังดำเนินการ`;
-  document.getElementById('listHead').innerHTML=`<tr><th></th><th>วันที่สร้าง</th><th>กิจกรรม</th><th>ประเภท</th><th>โครงการ</th><th>progress</th><th>deadline</th><th></th></tr>`;
+  document.getElementById('listHead').innerHTML=`<tr><th></th><th>วันที่สร้าง</th><th>กิจกรรม</th><th>ประเภท</th><th>โครงการ</th><th>progress</th><th>กำหนดเสร็จ</th><th></th></tr>`;
 
   const now=new Date();
   let rows='';
@@ -364,7 +411,7 @@ function renderDetail(a){
         <span class="bdg" style="background:${tc(a['ประเภทกิจกรรม'])}20;color:${tc(a['ประเภทกิจกรรม'])}">${a['ประเภทกิจกรรม']||'-'}</span>
       </div>
       <div style="text-align:right">
-        ${a.deadline?`<p style="font-size:10px;color:var(--muted)">deadline</p><p style="font-size:13px;font-weight:600;color:${allDone?'#14938C':'#E6961A'}">${fmtD(a.deadline)}</p>`:''}
+        ${a.deadline?`<p style="font-size:10px;color:var(--muted)">วันที่กำหนดเสร็จ</p><p style="font-size:13px;font-weight:600;color:${allDone?'#14938C':'#E6961A'}">${fmtD(a.deadline)}</p>`:''}
         <span class="bdg" style="margin-top:4px;background:${allDone?'rgba(20,147,140,.1)':'rgba(230,150,26,.1)'};color:${allDone?'#14938C':'#E6961A'}">${allDone?'✅ เสร็จทั้งหมด':'กำลังดำเนินการ'}</span>
       </div>
     </div>
@@ -389,16 +436,19 @@ function renderDetail(a){
     const dotCls=isDone?'dot dot-done':isCurrent?'dot dot-cur':isSkip?'dot dot-skip':'dot dot-wait';
     const dotTxt=isDone?'✓':isSkip?'—':s['ลำดับ']||i+1;
 
-    let meta='';
-    if(isDone&&s['วันที่เสร็จ'])meta=`เสร็จ ${fmtD(s['วันที่เสร็จ'])}`;
-    if(isSkip)meta='ข้ามขั้นตอนนี้';
-    if(s.deadline&&!isDone&&!isSkip){
+    // Meta: วันที่กำหนดเสร็จ ก่อน → วันที่เสร็จจริง
+    let metaParts=[];
+    if(s.deadline){
       const dl=new Date(s.deadline);
       const diff=Math.ceil((dl-now)/864e5);
-      if(diff<0)meta+=` <span class="stp-over">deadline: ${fmtD(s.deadline)} (เลย ${Math.abs(diff)} วัน)</span>`;
-      else if(diff<=7)meta+=` <span class="stp-dl">deadline: ${fmtD(s.deadline)} (${diff} วัน)</span>`;
-      else meta+=`deadline: ${fmtD(s.deadline)}`;
+      if(isDone) metaParts.push(`กำหนด: ${fmtD(s.deadline)}`);
+      else if(diff<0) metaParts.push(`<span class="stp-over">กำหนด: ${fmtD(s.deadline)} (เลย ${Math.abs(diff)} วัน)</span>`);
+      else if(diff<=7) metaParts.push(`<span class="stp-dl">กำหนด: ${fmtD(s.deadline)} (เหลือ ${diff} วัน)</span>`);
+      else metaParts.push(`กำหนด: ${fmtD(s.deadline)}`);
     }
+    if(isDone&&s['วันที่เสร็จ']) metaParts.push(`เสร็จจริง: ${fmtD(s['วันที่เสร็จ'])}`);
+    if(isSkip) metaParts=['ข้ามขั้นตอนนี้'];
+    if(s['หมายเหตุ']) metaParts.push(`<span style="font-style:italic">note: ${s['หมายเหตุ']}</span>`);
 
     h+=`<div class="${cls}">
       <div class="${dotCls}">${dotTxt}</div>
@@ -406,12 +456,13 @@ function renderDetail(a){
         <div class="stp-name" style="color:${isDone?'#14938C':isCurrent?'#E6961A':isSkip?'#64748B':'#94A3B8'};${isSkip?'text-decoration:line-through':''}">
           ${s['ลำดับ']}. ${s['ชื่อขั้นตอน']}
         </div>
-        ${meta?`<div class="stp-meta">${meta}</div>`:''}
+        ${metaParts.length?`<div class="stp-meta">${metaParts.join(' &nbsp;|&nbsp; ')}</div>`:''}
       </div>
-      <div style="display:flex;gap:4px">
-        ${isCurrent?`<button class="b bs" style="background:var(--emerald);color:#fff" onclick="markStep(${s._row},'เสร็จ','${a.id}')">✓ เสร็จ</button><button class="b bs" style="background:#F3F4F6;color:var(--muted);border:1px solid #D1D5DB" onclick="markStep(${s._row},'ข้าม','${a.id}')">ข้าม</button>`:''}
-        ${isDone?`<button class="b bs" style="background:#F3F4F6;color:var(--text2);border:1px solid #D1D5DB" onclick="markStep(${s._row},'รอ','${a.id}')">↩ ย้อน</button>`:''}
+      <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+        ${isCurrent?`<button class="b bs" style="background:var(--emerald);color:#fff" onclick="markStep(${s._row},'เสร็จ','${a.id}')">✓ เสร็จ</button><button class="b bs" style="background:#F3F4F6;color:var(--muted);border:1px solid #D1D5DB" onclick="markStep(${s._row},'ข้าม','${a.id}')">ข้าม</button><button class="b bs" style="background:#F3F4F6;color:var(--text2);border:1px solid #D1D5DB" onclick="openStepEdit(${s._row},'${a.id}',${JSON.stringify(s).replace(/'/g,"\\'")})">แก้ไข</button>`:''}
+        ${isDone?`<button class="b bs" style="background:#F3F4F6;color:var(--text2);border:1px solid #D1D5DB" onclick="markStep(${s._row},'รอ','${a.id}')">↩ ย้อน</button><button class="b bs" style="background:#F3F4F6;color:var(--text2);border:1px solid #D1D5DB" onclick="openStepEdit(${s._row},'${a.id}',${JSON.stringify(s).replace(/'/g,"\\'")})">แก้ไข</button>`:''}
         ${isSkip?`<button class="b bs" style="background:#F3F4F6;color:var(--text2);border:1px solid #D1D5DB" onclick="markStep(${s._row},'รอ','${a.id}')">↩ คืน</button>`:''}
+        ${(!isCurrent&&!isDone&&!isSkip)?`<button class="b bs" style="background:#F3F4F6;color:var(--text2);border:1px solid #D1D5DB" onclick="openStepEdit(${s._row},'${a.id}',${JSON.stringify(s).replace(/'/g,"\\'")})">แก้ไข</button>`:''}
       </div>
     </div>`;
   });
@@ -437,6 +488,34 @@ async function markStep(stepRow, status, actId){
   toast('อัปเดตสำเร็จ','ok');
 }
 
+function openStepEdit(stepRow, actId, stepData){
+  const s=typeof stepData==='string'?JSON.parse(stepData):stepData;
+  document.getElementById('modal').innerHTML=`<div class="mo" onclick="if(event.target===this)closeM()"><div class="md" style="max-width:500px">
+    <div class="md-h"><h2>แก้ไขขั้นตอน: ${s['ชื่อขั้นตอน']||''}</h2><button class="b bs" style="background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB" onclick="closeM()">✕</button></div>
+    <div class="md-b">
+      <div class="fg">
+        <div class="fgi"><label class="fgl">วันที่กำหนดเสร็จ</label><input class="fi" type="date" id="se_dl" value="${s.deadline||''}"></div>
+        <div class="fgi"><label class="fgl">วันที่เสร็จจริง</label><input class="fi" type="date" id="se_done" value="${s['วันที่เสร็จ']||''}"></div>
+        <div class="fgi fl"><label class="fgl">หมายเหตุ (note)</label><textarea class="fta" id="se_note" rows="2">${s['หมายเหตุ']||''}</textarea></div>
+      </div>
+    </div>
+    <div class="md-f"><button class="b" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB" onclick="closeM()">ยกเลิก</button><button class="b" style="background:var(--teal);color:#fff" onclick="saveStepEdit(${stepRow},'${actId}')">💾 บันทึก</button></div>
+  </div></div>`;
+}
+
+async function saveStepEdit(stepRow, actId){
+  const dl=document.getElementById('se_dl').value;
+  const done=document.getElementById('se_done').value;
+  const note=document.getElementById('se_note').value;
+  toast('กำลังบันทึก...','ok');
+  await api({action:'updateStepFull', data:JSON.stringify({stepRow, deadline:dl, doneDate:done, note})});
+  closeM();
+  await load();
+  const a=D.find(x=>x.id===actId);
+  if(a)renderDetail(a);
+  toast('บันทึกสำเร็จ','ok');
+}
+
 // ============================================================
 // ADD ACTIVITY
 // ============================================================
@@ -459,7 +538,7 @@ function openAdd(){
         <div class="fgi"><label class="fgl">ประเภทกิจกรรม</label><select class="fsl" id="fa_type" onchange="loadSOP()">${typeOpts}</select></div>
         <div class="fgi fl" id="fa_other_g" style="display:none"><label class="fgl">ระบุงาน</label><input class="fi" id="fa_other" placeholder="เช่น ประชุมทีม..."></div>
         <div class="fgi fl"><label class="fgl">ชื่อกิจกรรม</label><input class="fi" id="fa_name" placeholder="เช่น เบิกเงินงวด 2"></div>
-        <div class="fgi"><label class="fgl">deadline กิจกรรม (ถ้ามี)</label><input class="fi" type="date" id="fa_dl"></div>
+        <div class="fgi"><label class="fgl">วันที่กำหนดเสร็จ (ถ้ามี)</label><input class="fi" type="date" id="fa_dl"></div>
         <div class="fgi"><label class="fgl">หมายเหตุ</label><input class="fi" id="fa_note"></div>
       </div>
       <div id="sop_area"></div>
@@ -1035,17 +1114,21 @@ function renderDoneBody(){
 // SOP MANAGEMENT — จัดการ SOP Template จากหน้าเว็บ
 // ============================================================
 function renderSOP(){
-  let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+  let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
     <div>
       <h3 style="font-size:14px;font-weight:600;color:var(--navy)">จัดการ SOP Template</h3>
       <p style="font-size:11px;color:var(--muted)">เพิ่ม แก้ไข ลบ ขั้นตอน SOP แต่ละประเภทกิจกรรม (บันทึกลง Google Sheets อัตโนมัติ)</p>
     </div>
     <button class="b bs" style="background:var(--teal);color:#fff" onclick="openAddSopType()">+ เพิ่มประเภทใหม่</button>
+  </div>
+  <div class="tb" style="margin-bottom:14px">
+    <input class="sb" id="sopSearch" placeholder="🔍 ค้นหาประเภท..." oninput="filterSopCards()" style="max-width:250px">
+    <select class="fs" id="sopFilter" onchange="filterSopCards()"><option value="">ทุกประเภท (${TK.length})</option>${TK.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
   </div>`;
 
   TK.forEach(type=>{
     const steps=T[type]||[];
-    h+=`<div class="cd">
+    h+=`<div class="cd sop-card" data-type="${type}" data-hay="${type.toLowerCase()}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <h4 style="font-size:13px;font-weight:600;color:var(--navy)">${type} <span style="font-size:11px;color:var(--muted);font-weight:400">(${steps.length} ขั้นตอน)</span></h4>
         <button class="b bs" style="background:var(--emerald);color:#fff" onclick="openAddSopStep('${type}')">+ เพิ่มขั้นตอน</button>
@@ -1062,6 +1145,7 @@ function renderSOP(){
       </tr>`;
     });
     h+=`</tbody></table></div></div>`;
+  });
   });
 
   document.getElementById('pg-sop').innerHTML=h;
@@ -1132,6 +1216,47 @@ async function deleteSopStep(type,order){
   if(!confirm(`ลบขั้นตอนลำดับที่ ${order} ของ "${type}"?`))return;
   await api({action:'deleteSopStep',data:JSON.stringify({type,order})});
   toast('ลบสำเร็จ','ok');await load();renderSOP();
+}
+
+// ============================================================
+// SOP: filter cards
+// ============================================================
+function filterSopCards(){
+  const sq=(document.getElementById('sopSearch')||{}).value.toLowerCase();
+  const ft=(document.getElementById('sopFilter')||{}).value;
+  document.querySelectorAll('.sop-card').forEach(el=>{
+    let show=true;
+    if(ft&&el.dataset.type!==ft)show=false;
+    if(sq&&!el.dataset.hay.includes(sq))show=false;
+    el.style.display=show?'block':'none';
+  });
+}
+
+// ============================================================
+// DASHBOARD: filter alerts
+// ============================================================
+function filterAlerts(tab){
+  // Tab
+  if(tab){
+    document.querySelectorAll('.dl-tab').forEach(b=>{b.style.background='transparent';b.style.color='var(--text2)';});
+    const btn=document.querySelector(`.dl-tab[data-f="${tab}"]`);
+    if(btn){btn.style.background='var(--teal)';btn.style.color='#fff';}
+    window._dlTab=tab;
+  }
+  const curTab=window._dlTab||'all';
+  const sq=(document.getElementById('dlSearch')||{}).value||'';
+  const fp=(document.getElementById('dlProj')||{}).value||'';
+  const ft=(document.getElementById('dlType')||{}).value||'';
+  document.querySelectorAll('.dl-item').forEach(el=>{
+    let show=true;
+    if(curTab==='over'&&el.dataset.over!=='1')show=false;
+    if(curTab==='near7'&&(el.dataset.over==='1'||parseInt(el.dataset.diff)>7))show=false;
+    if(curTab==='near14'&&(el.dataset.over==='1'||parseInt(el.dataset.diff)<=7))show=false;
+    if(fp&&el.dataset.proj!==fp)show=false;
+    if(ft&&el.dataset.type!==ft)show=false;
+    if(sq&&!el.dataset.hay.includes(sq.toLowerCase()))show=false;
+    el.style.display=show?'flex':'none';
+  });
 }
 
 // HELPERS
